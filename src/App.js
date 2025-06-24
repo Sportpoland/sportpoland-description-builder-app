@@ -1,3 +1,5 @@
+console.log("NEW VERSION LOADED - TEST 123");
+
 import React from 'react';
 
 function App() {
