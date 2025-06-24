@@ -18,17 +18,18 @@ const AllegroDescriptionEditor = () => {
     const newSection = {
       id: Date.now(),
       type,
-      text: '',
+      text: type === 'text-only' || type === 'image-left' || type === 'image-right' ? 
+        '<p>Wprowadź tekst...</p>' : '',
       image1: '',
       image2: '',
-      icons: type === 'icons-grid' ? [] : undefined,
+      icons: type === 'icons-grid' ? [
+        { id: 1, icon: '✓', title: 'Tytuł 1', description: 'Opis funkcji 1' },
+        { id: 2, icon: '⚡', title: 'Tytuł 2', description: 'Opis funkcji 2' },
+        { id: 3, icon: '🔒', title: 'Tytuł 3', description: 'Opis funkcji 3' }
+      ] : undefined,
       textFormatting: {
-        bold: false,
-        italic: false,
-        underline: false,
         fontSize: '14',
-        textAlign: 'left',
-        headingLevel: 'p'
+        textAlign: 'left'
       },
       backgroundColor: '#ffffff'
     };
@@ -39,10 +40,70 @@ const AllegroDescriptionEditor = () => {
     setSections(sections.filter(section => section.id !== id));
   };
 
+  const moveSection = (id, direction) => {
+    const currentIndex = sections.findIndex(section => section.id === id);
+    if (
+      (direction === 'up' && currentIndex === 0) ||
+      (direction === 'down' && currentIndex === sections.length - 1)
+    ) return;
+
+    const newSections = [...sections];
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    [newSections[currentIndex], newSections[targetIndex]] = [newSections[targetIndex], newSections[currentIndex]];
+    setSections(newSections);
+  };
+
+  const copySection = (id) => {
+    const sectionToCopy = sections.find(section => section.id === id);
+    if (sectionToCopy) {
+      const copiedSection = {
+        ...sectionToCopy,
+        id: Date.now()
+      };
+      setSections([...sections, copiedSection]);
+    }
+  };
+
   const updateSection = (id, field, value) => {
     setSections(sections.map(section => 
       section.id === id ? { ...section, [field]: value } : section
     ));
+  };
+
+  const updateIconsGrid = (sectionId, iconIndex, field, value) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        const newIcons = [...section.icons];
+        newIcons[iconIndex] = { ...newIcons[iconIndex], [field]: value };
+        return { ...section, icons: newIcons };
+      }
+      return section;
+    }));
+  };
+
+  const addIconToGrid = (sectionId) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        const newIcon = {
+          id: Date.now(),
+          icon: '📌',
+          title: 'Nowy tytuł',
+          description: 'Nowy opis'
+        };
+        return { ...section, icons: [...section.icons, newIcon] };
+      }
+      return section;
+    }));
+  };
+
+  const removeIconFromGrid = (sectionId, iconIndex) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        const newIcons = section.icons.filter((_, index) => index !== iconIndex);
+        return { ...section, icons: newIcons };
+      }
+      return section;
+    }));
   };
 
   const updateTextFormatting = (id, property, value) => {
@@ -67,32 +128,39 @@ const AllegroDescriptionEditor = () => {
     }
   };
 
+  const formatText = (sectionId, command, value = null) => {
+    document.execCommand(command, false, value);
+    // Aktualizuj treść po formatowaniu
+    const editor = document.getElementById(`editor-${sectionId}`);
+    if (editor) {
+      updateSection(sectionId, 'text', editor.innerHTML);
+    }
+  };
+
+  const handleTextChange = (sectionId, content) => {
+    updateSection(sectionId, 'text', content);
+  };
+
   const generateHTML = () => {
     let html = '';
     
     sections.forEach(section => {
-      const textStyle = `font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign}; ${section.textFormatting.bold ? 'font-weight: bold;' : ''} ${section.textFormatting.italic ? 'font-style: italic;' : ''} ${section.textFormatting.underline ? 'text-decoration: underline;' : ''}`;
-      const containerStyle = `background-color: ${section.backgroundColor}; margin-bottom: 20px; padding: 10px;`;
-      
-      const generateTextElement = (text, style) => {
-        const tag = section.textFormatting.headingLevel;
-        return `<${tag} style="${style}">${text}</${tag}>`;
-      };
+      const containerStyle = `background-color: ${section.backgroundColor}; margin-bottom: 20px; padding: 20px; border-radius: 15px;`;
       
       switch (section.type) {
         case 'text-only':
           html += `<div style="${containerStyle}">
-            ${generateTextElement(section.text, textStyle)}
+            <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
           </div>\n`;
           break;
           
         case 'image-left':
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
-              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto;" alt="">` : ''}
+              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
-              ${generateTextElement(section.text, textStyle)}
+              <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
             </div>
           </div>\n`;
           break;
@@ -100,28 +168,41 @@ const AllegroDescriptionEditor = () => {
         case 'image-right':
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
-              ${generateTextElement(section.text, textStyle)}
+              <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
-              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto;" alt="">` : ''}
+              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
           </div>\n`;
           break;
           
         case 'image-only':
           html += `<div style="text-align: center; ${containerStyle}">
-            ${section.image1 ? `<img src="${section.image1}" style="max-width: 100%; height: auto;" alt="">` : ''}
+            ${section.image1 ? `<img src="${section.image1}" style="max-width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
           </div>\n`;
           break;
           
         case 'two-images':
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 5px; text-align: center;">
-              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto;" alt="">` : ''}
+              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 5px; text-align: center;">
-              ${section.image2 ? `<img src="${section.image2}" style="width: 100%; height: auto;" alt="">` : ''}
+              ${section.image2 ? `<img src="${section.image2}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
+          </div>\n`;
+          break;
+          
+        case 'icons-grid':
+          const iconsHtml = section.icons.map(icon => `
+            <div style="display: inline-block; width: 200px; text-align: center; margin: 10px; vertical-align: top;">
+              <div style="font-size: 48px; margin-bottom: 10px;">${icon.icon}</div>
+              <h4 style="margin: 5px 0; font-weight: bold;">${icon.title}</h4>
+              <p style="margin: 0; font-size: 14px; color: #666;">${icon.description}</p>
+            </div>
+          `).join('');
+          html += `<div style="text-align: center; ${containerStyle}">
+            ${iconsHtml}
           </div>\n`;
           break;
           
@@ -207,7 +288,7 @@ const AllegroDescriptionEditor = () => {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {sections.map((section, index) => (
-                  <div key={section.id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+                  <div key={section.id} style={{ border: '1px solid #e5e7eb', borderRadius: '15px' }}>
                     
                     <div style={{ 
                       display: 'flex', 
@@ -215,12 +296,57 @@ const AllegroDescriptionEditor = () => {
                       alignItems: 'center',
                       backgroundColor: '#f9fafb', 
                       padding: '8px 16px', 
-                      borderBottom: '1px solid #e5e7eb' 
+                      borderBottom: '1px solid #e5e7eb',
+                      borderRadius: '15px 15px 0 0'
                     }}>
                       <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
                         {sectionTypes.find(t => t.id === section.type)?.name}
                       </span>
                       <div style={{ display: 'flex', gap: '4px' }}>
+                        <button
+                          onClick={() => moveSection(section.id, 'up')}
+                          disabled={index === 0}
+                          style={{
+                            padding: '4px',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            cursor: index === 0 ? 'not-allowed' : 'pointer',
+                            color: index === 0 ? '#ccc' : '#6b7280',
+                            fontSize: '16px'
+                          }}
+                          title="Przesuń w górę"
+                        >
+                          ⬆️
+                        </button>
+                        <button
+                          onClick={() => moveSection(section.id, 'down')}
+                          disabled={index === sections.length - 1}
+                          style={{
+                            padding: '4px',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            cursor: index === sections.length - 1 ? 'not-allowed' : 'pointer',
+                            color: index === sections.length - 1 ? '#ccc' : '#6b7280',
+                            fontSize: '16px'
+                          }}
+                          title="Przesuń w dół"
+                        >
+                          ⬇️
+                        </button>
+                        <button
+                          onClick={() => copySection(section.id)}
+                          style={{
+                            padding: '4px',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#6b7280',
+                            fontSize: '16px'
+                          }}
+                          title="Kopiuj sekcję"
+                        >
+                          📋
+                        </button>
                         <button
                           onClick={() => deleteSection(section.id)}
                           style={{
@@ -228,8 +354,10 @@ const AllegroDescriptionEditor = () => {
                             backgroundColor: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
-                            color: '#ef4444'
+                            color: '#ef4444',
+                            fontSize: '16px'
                           }}
+                          title="Usuń sekcję"
                         >
                           🗑️
                         </button>
@@ -246,24 +374,11 @@ const AllegroDescriptionEditor = () => {
                         gap: '8px',
                         flexWrap: 'wrap'
                       }}>
-                        <select
-                          value={section.textFormatting.headingLevel}
-                          onChange={(e) => updateTextFormatting(section.id, 'headingLevel', e.target.value)}
-                          style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '14px' }}
-                        >
-                          <option value="p">Paragraf</option>
-                          <option value="h1">H1</option>
-                          <option value="h2">H2</option>
-                          <option value="h3">H3</option>
-                          <option value="h4">H4</option>
-                        </select>
-                        
                         <button
-                          onClick={() => updateTextFormatting(section.id, 'bold', !section.textFormatting.bold)}
+                          onClick={() => formatText(section.id, 'bold')}
                           style={{
                             padding: '4px 8px',
-                            backgroundColor: section.textFormatting.bold ? '#3b82f6' : 'white',
-                            color: section.textFormatting.bold ? 'white' : 'black',
+                            backgroundColor: 'white',
                             border: '1px solid #d1d5db',
                             borderRadius: '4px',
                             cursor: 'pointer',
@@ -274,11 +389,10 @@ const AllegroDescriptionEditor = () => {
                         </button>
                         
                         <button
-                          onClick={() => updateTextFormatting(section.id, 'italic', !section.textFormatting.italic)}
+                          onClick={() => formatText(section.id, 'italic')}
                           style={{
                             padding: '4px 8px',
-                            backgroundColor: section.textFormatting.italic ? '#3b82f6' : 'white',
-                            color: section.textFormatting.italic ? 'white' : 'black',
+                            backgroundColor: 'white',
                             border: '1px solid #d1d5db',
                             borderRadius: '4px',
                             cursor: 'pointer',
@@ -286,6 +400,75 @@ const AllegroDescriptionEditor = () => {
                           }}
                         >
                           I
+                        </button>
+
+                        <button
+                          onClick={() => formatText(section.id, 'underline')}
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: 'white',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          U
+                        </button>
+
+                        <button
+                          onClick={() => formatText(section.id, 'insertUnorderedList')}
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: 'white',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          • Lista
+                        </button>
+
+                        <button
+                          onClick={() => formatText(section.id, 'formatBlock', 'h1')}
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: 'white',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          H1
+                        </button>
+
+                        <button
+                          onClick={() => formatText(section.id, 'formatBlock', 'h2')}
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: 'white',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          H2
+                        </button>
+
+                        <button
+                          onClick={() => formatText(section.id, 'formatBlock', 'p')}
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: 'white',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          P
                         </button>
                         
                         <select
@@ -350,25 +533,22 @@ const AllegroDescriptionEditor = () => {
                       </button>
                     </div>
 
-                    <div style={{ backgroundColor: section.backgroundColor, padding: '16px' }}>
+                    <div style={{ backgroundColor: section.backgroundColor, padding: '16px', borderRadius: '0 0 15px 15px' }}>
                       {section.type === 'text-only' && (
-                        <textarea
-                          value={section.text}
-                          onChange={(e) => updateSection(section.id, 'text', e.target.value)}
-                          placeholder="Wprowadź tekst..."
+                        <div
+                          id={`editor-${section.id}`}
+                          contentEditable
+                          dangerouslySetInnerHTML={{ __html: section.text }}
+                          onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
                           style={{
-                            width: '100%',
-                            height: '120px',
+                            minHeight: '120px',
                             padding: '8px',
                             border: '1px solid #d1d5db',
                             borderRadius: '6px',
-                            resize: 'vertical',
-                            boxSizing: 'border-box',
                             fontSize: `${section.textFormatting.fontSize}px`,
                             textAlign: section.textFormatting.textAlign,
-                            fontWeight: section.textFormatting.bold ? 'bold' : 'normal',
-                            fontStyle: section.textFormatting.italic ? 'italic' : 'normal',
-                            textDecoration: section.textFormatting.underline ? 'underline' : 'none'
+                            outline: 'none',
+                            backgroundColor: 'white'
                           }}
                         />
                       )}
@@ -378,7 +558,7 @@ const AllegroDescriptionEditor = () => {
                           <div style={{ width: '50%' }}>
                             <div style={{ 
                               border: '2px dashed #d1d5db', 
-                              borderRadius: '6px', 
+                              borderRadius: '15px', 
                               padding: '16px', 
                               textAlign: 'center',
                               minHeight: '150px',
@@ -394,7 +574,8 @@ const AllegroDescriptionEditor = () => {
                                     width: '100%', 
                                     height: 'auto', 
                                     maxHeight: '200px', 
-                                    objectFit: 'contain' 
+                                    objectFit: 'contain',
+                                    borderRadius: '10px'
                                   }} 
                                 />
                               ) : (
@@ -430,22 +611,20 @@ const AllegroDescriptionEditor = () => {
                             </div>
                           </div>
                           <div style={{ width: '50%' }}>
-                            <textarea
-                              value={section.text}
-                              onChange={(e) => updateSection(section.id, 'text', e.target.value)}
-                              placeholder="Wprowadź tekst..."
+                            <div
+                              id={`editor-${section.id}`}
+                              contentEditable
+                              dangerouslySetInnerHTML={{ __html: section.text }}
+                              onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
                               style={{
-                                width: '100%',
-                                height: '150px',
+                                minHeight: '150px',
                                 padding: '8px',
                                 border: '1px solid #d1d5db',
                                 borderRadius: '6px',
-                                resize: 'vertical',
-                                boxSizing: 'border-box',
                                 fontSize: `${section.textFormatting.fontSize}px`,
                                 textAlign: section.textFormatting.textAlign,
-                                fontWeight: section.textFormatting.bold ? 'bold' : 'normal',
-                                fontStyle: section.textFormatting.italic ? 'italic' : 'normal'
+                                outline: 'none',
+                                backgroundColor: 'white'
                               }}
                             />
                           </div>
@@ -455,29 +634,27 @@ const AllegroDescriptionEditor = () => {
                       {section.type === 'image-right' && (
                         <div style={{ display: 'flex', gap: '16px' }}>
                           <div style={{ width: '50%' }}>
-                            <textarea
-                              value={section.text}
-                              onChange={(e) => updateSection(section.id, 'text', e.target.value)}
-                              placeholder="Wprowadź tekst..."
+                            <div
+                              id={`editor-${section.id}`}
+                              contentEditable
+                              dangerouslySetInnerHTML={{ __html: section.text }}
+                              onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
                               style={{
-                                width: '100%',
-                                height: '150px',
+                                minHeight: '150px',
                                 padding: '8px',
                                 border: '1px solid #d1d5db',
                                 borderRadius: '6px',
-                                resize: 'vertical',
-                                boxSizing: 'border-box',
                                 fontSize: `${section.textFormatting.fontSize}px`,
                                 textAlign: section.textFormatting.textAlign,
-                                fontWeight: section.textFormatting.bold ? 'bold' : 'normal',
-                                fontStyle: section.textFormatting.italic ? 'italic' : 'normal'
+                                outline: 'none',
+                                backgroundColor: 'white'
                               }}
                             />
                           </div>
                           <div style={{ width: '50%' }}>
                             <div style={{ 
                               border: '2px dashed #d1d5db', 
-                              borderRadius: '6px', 
+                              borderRadius: '15px', 
                               padding: '16px', 
                               textAlign: 'center',
                               minHeight: '150px',
@@ -493,7 +670,8 @@ const AllegroDescriptionEditor = () => {
                                     width: '100%', 
                                     height: 'auto', 
                                     maxHeight: '200px', 
-                                    objectFit: 'contain' 
+                                    objectFit: 'contain',
+                                    borderRadius: '10px'
                                   }} 
                                 />
                               ) : (
@@ -534,7 +712,7 @@ const AllegroDescriptionEditor = () => {
                       {section.type === 'image-only' && (
                         <div style={{ 
                           border: '2px dashed #d1d5db', 
-                          borderRadius: '6px', 
+                          borderRadius: '15px', 
                           padding: '16px', 
                           textAlign: 'center',
                           minHeight: '200px',
@@ -550,7 +728,8 @@ const AllegroDescriptionEditor = () => {
                                 width: '100%', 
                                 height: 'auto', 
                                 maxHeight: '300px', 
-                                objectFit: 'contain' 
+                                objectFit: 'contain',
+                                borderRadius: '10px'
                               }} 
                             />
                           ) : (
@@ -591,7 +770,7 @@ const AllegroDescriptionEditor = () => {
                           <div style={{ width: '50%' }}>
                             <div style={{ 
                               border: '2px dashed #d1d5db', 
-                              borderRadius: '6px', 
+                              borderRadius: '15px', 
                               padding: '16px', 
                               textAlign: 'center',
                               minHeight: '150px',
@@ -607,7 +786,8 @@ const AllegroDescriptionEditor = () => {
                                     width: '100%', 
                                     height: 'auto', 
                                     maxHeight: '150px', 
-                                    objectFit: 'contain' 
+                                    objectFit: 'contain',
+                                    borderRadius: '10px'
                                   }} 
                                 />
                               ) : (
@@ -645,7 +825,7 @@ const AllegroDescriptionEditor = () => {
                           <div style={{ width: '50%' }}>
                             <div style={{ 
                               border: '2px dashed #d1d5db', 
-                              borderRadius: '6px', 
+                              borderRadius: '15px', 
                               padding: '16px', 
                               textAlign: 'center',
                               minHeight: '150px',
@@ -661,7 +841,8 @@ const AllegroDescriptionEditor = () => {
                                     width: '100%', 
                                     height: 'auto', 
                                     maxHeight: '150px', 
-                                    objectFit: 'contain' 
+                                    objectFit: 'contain',
+                                    borderRadius: '10px'
                                   }} 
                                 />
                               ) : (
@@ -696,6 +877,115 @@ const AllegroDescriptionEditor = () => {
                               </button>
                             </div>
                           </div>
+                        </div>
+                      )}
+
+                      {section.type === 'icons-grid' && (
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ 
+                            display: 'flex', 
+                            flexWrap: 'wrap', 
+                            justifyContent: 'center',
+                            gap: '20px',
+                            marginBottom: '20px'
+                          }}>
+                            {section.icons.map((icon, iconIndex) => (
+                              <div key={icon.id} style={{ 
+                                width: '200px', 
+                                padding: '15px',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '10px',
+                                backgroundColor: 'white',
+                                position: 'relative'
+                              }}>
+                                <button
+                                  onClick={() => removeIconFromGrid(section.id, iconIndex)}
+                                  style={{
+                                    position: 'absolute',
+                                    top: '5px',
+                                    right: '5px',
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '20px',
+                                    height: '20px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  ×
+                                </button>
+                                
+                                <input
+                                  type="text"
+                                  value={icon.icon}
+                                  onChange={(e) => updateIconsGrid(section.id, iconIndex, 'icon', e.target.value)}
+                                  style={{
+                                    fontSize: '48px',
+                                    border: 'none',
+                                    textAlign: 'center',
+                                    width: '100%',
+                                    marginBottom: '10px',
+                                    background: 'transparent',
+                                    outline: 'none'
+                                  }}
+                                  placeholder="📌"
+                                />
+                                
+                                <input
+                                  type="text"
+                                  value={icon.title}
+                                  onChange={(e) => updateIconsGrid(section.id, iconIndex, 'title', e.target.value)}
+                                  style={{
+                                    width: '100%',
+                                    padding: '5px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    marginBottom: '5px',
+                                    fontSize: '14px'
+                                  }}
+                                  placeholder="Tytuł"
+                                />
+                                
+                                <textarea
+                                  value={icon.description}
+                                  onChange={(e) => updateIconsGrid(section.id, iconIndex, 'description', e.target.value)}
+                                  style={{
+                                    width: '100%',
+                                    padding: '5px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    resize: 'vertical',
+                                    minHeight: '60px',
+                                    fontSize: '12px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                  placeholder="Opis funkcji"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <button
+                            onClick={() => addIconToGrid(section.id)}
+                            style={{
+                              padding: '8px 16px',
+                              backgroundColor: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '14px'
+                            }}
+                          >
+                            + Dodaj ikonę
+                          </button>
                         </div>
                       )}
                     </div>
