@@ -48,6 +48,8 @@ const AllegroDescriptionEditor = () => {
       text: '',
       image1: '',
       image2: '',
+      imagePreview1: '', // Dla podglądu na żywo
+      imagePreview2: '', // Dla podglądu na żywo
       icons: type === 'icons-grid' ? [
         { id: 1, icon: '✓', title: 'Tytuł 1', description: 'Opis funkcji 1' },
         { id: 2, icon: '⚡', title: 'Tytuł 2', description: 'Opis funkcji 2' },
@@ -64,6 +66,16 @@ const AllegroDescriptionEditor = () => {
 
   const deleteSection = (id) => {
     saveToHistory();
+    // Wyczyść blob URLs aby uniknąć wycieków pamięci
+    const sectionToDelete = sections.find(section => section.id === id);
+    if (sectionToDelete) {
+      if (sectionToDelete.imagePreview1) {
+        URL.revokeObjectURL(sectionToDelete.imagePreview1);
+      }
+      if (sectionToDelete.imagePreview2) {
+        URL.revokeObjectURL(sectionToDelete.imagePreview2);
+      }
+    }
     setSections(sections.filter(section => section.id !== id));
   };
 
@@ -87,7 +99,10 @@ const AllegroDescriptionEditor = () => {
     if (sectionToCopy) {
       const copiedSection = {
         ...sectionToCopy,
-        id: Date.now()
+        id: Date.now(),
+        // Nie kopiujemy blob URLs - użytkownik będzie musiał ponownie dodać zdjęcia
+        imagePreview1: '',
+        imagePreview2: ''
       };
       setSections([...sections, copiedSection]);
     }
@@ -150,7 +165,12 @@ const AllegroDescriptionEditor = () => {
     const file = event.target.files[0];
     if (file) {
       const imageName = file.name;
+      const imageURL = URL.createObjectURL(file); // Tworzymy URL do podglądu
+      
       updateSection(sectionId, imageField, imageName);
+      // Zapisujemy URL podglądu w odpowiednim polu
+      const previewField = imageField === 'image1' ? 'imagePreview1' : 'imagePreview2';
+      updateSection(sectionId, previewField, imageURL);
     }
   };
 
@@ -182,6 +202,81 @@ const AllegroDescriptionEditor = () => {
     return `/data/include/cms/sportpoland_com/pliki-opisy/${productBrand}/${productCode}/${imageName}`;
   };
 
+  // Funkcja do generowania HTML z podglądem na żywo (dla podglądu w interfejsie)
+  const generatePreviewHTML = () => {
+    let html = '';
+    
+    sections.forEach(section => {
+      const containerStyle = `background-color: ${section.backgroundColor}; margin-bottom: 20px; padding: 20px; border-radius: 15px;`;
+      
+      switch (section.type) {
+        case 'text-only':
+          html += `<div style="${containerStyle}">
+            <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
+          </div>\n`;
+          break;
+          
+        case 'image-left':
+          html += `<div style="display: table; width: 100%; ${containerStyle}">
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+              ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+            </div>
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
+              <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'image-right':
+          html += `<div style="display: table; width: 100%; ${containerStyle}">
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+              <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
+            </div>
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
+              ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'image-only':
+          html += `<div style="text-align: center; ${containerStyle}">
+            ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="max-width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+          </div>\n`;
+          break;
+          
+        case 'two-images':
+          html += `<div style="display: table; width: 100%; ${containerStyle}">
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 5px; text-align: center;">
+              ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+            </div>
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 5px; text-align: center;">
+              ${section.imagePreview2 ? `<img src="${section.imagePreview2}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'icons-grid':
+          const iconsHtml = section.icons.map(icon => `
+            <div style="display: inline-block; width: 200px; text-align: center; margin: 10px; vertical-align: top;">
+              <div style="font-size: 48px; margin-bottom: 10px;">${icon.icon}</div>
+              <h4 style="margin: 5px 0; font-weight: bold;">${icon.title}</h4>
+              <p style="margin: 0; font-size: 14px; color: #666;">${icon.description}</p>
+            </div>
+          `).join('');
+          html += `<div style="text-align: center; ${containerStyle}">
+            ${iconsHtml}
+          </div>\n`;
+          break;
+          
+        default:
+          break;
+      }
+    });
+    
+    return html;
+  };
+
+  // Funkcja do generowania finalnego HTML (dla eksportu z właściwymi ścieżkami)
   const generateHTML = () => {
     let html = '';
     
@@ -696,12 +791,46 @@ const AllegroDescriptionEditor = () => {
                               flexDirection: 'column',
                               justifyContent: 'center'
                             }}>
-                              {section.image1 ? (
-                                <div>
-                                  <div style={{ fontSize: '14px', color: '#374151', marginBottom: '8px' }}>
-                                    Nazwa pliku: {section.image1}
+                              {section.imagePreview1 ? (
+                                <div style={{ position: 'relative' }}>
+                                  <button
+                                    onClick={() => {
+                                      URL.revokeObjectURL(section.imagePreview1);
+                                      updateSection(section.id, 'image1', '');
+                                      updateSection(section.id, 'imagePreview1', '');
+                                    }}
+                                    style={{
+                                      position: 'absolute',
+                                      top: '0px',
+                                      right: '0px',
+                                      background: '#ef4444',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '24px',
+                                      height: '24px',
+                                      cursor: 'pointer',
+                                      fontSize: '14px',
+                                      zIndex: 10
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                  <img 
+                                    src={section.imagePreview1} 
+                                    alt={section.image1}
+                                    style={{ 
+                                      maxWidth: '100%', 
+                                      maxHeight: '120px', 
+                                      borderRadius: '8px',
+                                      marginBottom: '8px',
+                                      objectFit: 'cover'
+                                    }} 
+                                  />
+                                  <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                                    {section.image1}
                                   </div>
-                                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                  <div style={{ fontSize: '10px', color: '#6b7280' }}>
                                     Ścieżka: {generateImagePath(section.image1)}
                                   </div>
                                 </div>
@@ -825,12 +954,46 @@ const AllegroDescriptionEditor = () => {
                               flexDirection: 'column',
                               justifyContent: 'center'
                             }}>
-                              {section.image1 ? (
-                                <div>
-                                  <div style={{ fontSize: '14px', color: '#374151', marginBottom: '8px' }}>
-                                    Nazwa pliku: {section.image1}
+                              {section.imagePreview1 ? (
+                                <div style={{ position: 'relative' }}>
+                                  <button
+                                    onClick={() => {
+                                      URL.revokeObjectURL(section.imagePreview1);
+                                      updateSection(section.id, 'image1', '');
+                                      updateSection(section.id, 'imagePreview1', '');
+                                    }}
+                                    style={{
+                                      position: 'absolute',
+                                      top: '0px',
+                                      right: '0px',
+                                      background: '#ef4444',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '24px',
+                                      height: '24px',
+                                      cursor: 'pointer',
+                                      fontSize: '14px',
+                                      zIndex: 10
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                  <img 
+                                    src={section.imagePreview1} 
+                                    alt={section.image1}
+                                    style={{ 
+                                      maxWidth: '100%', 
+                                      maxHeight: '120px', 
+                                      borderRadius: '8px',
+                                      marginBottom: '8px',
+                                      objectFit: 'cover'
+                                    }} 
+                                  />
+                                  <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                                    {section.image1}
                                   </div>
-                                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                  <div style={{ fontSize: '10px', color: '#6b7280' }}>
                                     Ścieżka: {generateImagePath(section.image1)}
                                   </div>
                                 </div>
@@ -880,10 +1043,44 @@ const AllegroDescriptionEditor = () => {
                           flexDirection: 'column',
                           justifyContent: 'center'
                         }}>
-                          {section.image1 ? (
-                            <div>
-                              <div style={{ fontSize: '16px', color: '#374151', marginBottom: '8px' }}>
-                                Nazwa pliku: {section.image1}
+                          {section.imagePreview1 ? (
+                            <div style={{ position: 'relative' }}>
+                              <button
+                                onClick={() => {
+                                  URL.revokeObjectURL(section.imagePreview1);
+                                  updateSection(section.id, 'image1', '');
+                                  updateSection(section.id, 'imagePreview1', '');
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  top: '0px',
+                                  right: '0px',
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '24px',
+                                  height: '24px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  zIndex: 10
+                                }}
+                              >
+                                ×
+                              </button>
+                              <img 
+                                src={section.imagePreview1} 
+                                alt={section.image1}
+                                style={{ 
+                                  maxWidth: '100%', 
+                                  maxHeight: '160px', 
+                                  borderRadius: '8px',
+                                  marginBottom: '8px',
+                                  objectFit: 'cover'
+                                }} 
+                              />
+                              <div style={{ fontSize: '14px', color: '#374151', marginBottom: '4px' }}>
+                                {section.image1}
                               </div>
                               <div style={{ fontSize: '12px', color: '#6b7280' }}>
                                 Ścieżka: {generateImagePath(section.image1)}
@@ -935,12 +1132,46 @@ const AllegroDescriptionEditor = () => {
                               flexDirection: 'column',
                               justifyContent: 'center'
                             }}>
-                              {section.image1 ? (
-                                <div>
-                                  <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                              {section.imagePreview1 ? (
+                                <div style={{ position: 'relative' }}>
+                                  <button
+                                    onClick={() => {
+                                      URL.revokeObjectURL(section.imagePreview1);
+                                      updateSection(section.id, 'image1', '');
+                                      updateSection(section.id, 'imagePreview1', '');
+                                    }}
+                                    style={{
+                                      position: 'absolute',
+                                      top: '0px',
+                                      right: '0px',
+                                      background: '#ef4444',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '20px',
+                                      height: '20px',
+                                      cursor: 'pointer',
+                                      fontSize: '12px',
+                                      zIndex: 10
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                  <img 
+                                    src={section.imagePreview1} 
+                                    alt={section.image1}
+                                    style={{ 
+                                      maxWidth: '100%', 
+                                      maxHeight: '100px', 
+                                      borderRadius: '8px',
+                                      marginBottom: '4px',
+                                      objectFit: 'cover'
+                                    }} 
+                                  />
+                                  <div style={{ fontSize: '11px', color: '#374151', marginBottom: '2px' }}>
                                     {section.image1}
                                   </div>
-                                  <div style={{ fontSize: '10px', color: '#6b7280' }}>
+                                  <div style={{ fontSize: '9px', color: '#6b7280' }}>
                                     {generateImagePath(section.image1)}
                                   </div>
                                 </div>
@@ -987,12 +1218,46 @@ const AllegroDescriptionEditor = () => {
                               flexDirection: 'column',
                               justifyContent: 'center'
                             }}>
-                              {section.image2 ? (
-                                <div>
-                                  <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                              {section.imagePreview2 ? (
+                                <div style={{ position: 'relative' }}>
+                                  <button
+                                    onClick={() => {
+                                      URL.revokeObjectURL(section.imagePreview2);
+                                      updateSection(section.id, 'image2', '');
+                                      updateSection(section.id, 'imagePreview2', '');
+                                    }}
+                                    style={{
+                                      position: 'absolute',
+                                      top: '0px',
+                                      right: '0px',
+                                      background: '#ef4444',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '20px',
+                                      height: '20px',
+                                      cursor: 'pointer',
+                                      fontSize: '12px',
+                                      zIndex: 10
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                  <img 
+                                    src={section.imagePreview2} 
+                                    alt={section.image2}
+                                    style={{ 
+                                      maxWidth: '100%', 
+                                      maxHeight: '100px', 
+                                      borderRadius: '8px',
+                                      marginBottom: '4px',
+                                      objectFit: 'cover'
+                                    }} 
+                                  />
+                                  <div style={{ fontSize: '11px', color: '#374151', marginBottom: '2px' }}>
                                     {section.image2}
                                   </div>
-                                  <div style={{ fontSize: '10px', color: '#6b7280' }}>
+                                  <div style={{ fontSize: '9px', color: '#6b7280' }}>
                                     {generateImagePath(section.image2)}
                                   </div>
                                 </div>
@@ -1203,7 +1468,7 @@ const AllegroDescriptionEditor = () => {
 
                 {showPreview && (
                   <div style={{ marginTop: '16px' }}>
-                    <h4 style={{ fontWeight: '500', marginBottom: '8px' }}>Podgląd:</h4>
+                    <h4 style={{ fontWeight: '500', marginBottom: '8px' }}>Podgląd na żywo:</h4>
                     <div 
                       style={{ 
                         border: '1px solid #d1d5db', 
@@ -1211,10 +1476,10 @@ const AllegroDescriptionEditor = () => {
                         padding: '16px', 
                         backgroundColor: 'white' 
                       }}
-                      dangerouslySetInnerHTML={{ __html: generateHTML() }} 
+                      dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }} 
                     />
                     
-                    <h4 style={{ fontWeight: '500', marginBottom: '8px', marginTop: '16px' }}>Kod HTML:</h4>
+                    <h4 style={{ fontWeight: '500', marginBottom: '8px', marginTop: '16px' }}>Kod HTML (z właściwymi ścieżkami):</h4>
                     <textarea
                       readOnly
                       value={generateHTML()}
