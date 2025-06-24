@@ -161,6 +161,28 @@ const AllegroDescriptionEditor = () => {
     ));
   };
 
+  const handleIconImageUpload = (sectionId, iconId, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const imageName = file.name;
+      const imageURL = URL.createObjectURL(file);
+      
+      setSections(prevSections => {
+        return prevSections.map(section => {
+          if (section.id === sectionId) {
+            const updatedIcons = section.icons.map(icon => 
+              icon.id === iconId 
+                ? { ...icon, image: imageName, imagePreview: imageURL }
+                : icon
+            );
+            return { ...section, icons: updatedIcons };
+          }
+          return section;
+        });
+      });
+    }
+  };
+
   const handleImageUpload = (sectionId, imageField, event) => {
     const file = event.target.files[0];
     if (file) {
@@ -210,7 +232,6 @@ const AllegroDescriptionEditor = () => {
   const generateImagePath = (imageName) => {
     if (!imageName) return '';
     if (!productBrand || !productCode) {
-      console.warn('Marka produktu lub kod produktu nie są wypełnione. Używam tylko nazwy pliku:', imageName);
       return imageName;
     }
     return `/data/include/cms/sportpoland_com/pliki-opisy/${productBrand}/${productCode}/${imageName}`;
@@ -272,7 +293,12 @@ const AllegroDescriptionEditor = () => {
         case 'icons-grid':
           const iconsHtml = section.icons.map(icon => `
             <div style="display: inline-block; width: 200px; text-align: center; margin: 10px; vertical-align: top;">
-              <div style="font-size: 48px; margin-bottom: 10px;">${icon.icon}</div>
+              <div style="margin-bottom: 10px;">
+                ${icon.image 
+                  ? `<img src="${generateImagePath(icon.image)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" alt="${icon.title}">`
+                  : `<div style="font-size: 48px;">${icon.icon}</div>`
+                }
+              </div>
               <h4 style="margin: 5px 0; font-weight: bold;">${icon.title}</h4>
               <p style="margin: 0; font-size: 14px; color: #666;">${icon.description}</p>
             </div>
@@ -306,10 +332,10 @@ const AllegroDescriptionEditor = () => {
           
         case 'image-left':
           html += `<div style="display: table; width: 100%; ${containerStyle}">
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-right: 10px;">
               ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
+            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-left: 10px;">
               <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
             </div>
           </div>\n`;
@@ -317,10 +343,10 @@ const AllegroDescriptionEditor = () => {
           
         case 'image-right':
           html += `<div style="display: table; width: 100%; ${containerStyle}">
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-right: 10px;">
               <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
             </div>
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
+            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-left: 10px;">
               ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
           </div>\n`;
@@ -875,10 +901,10 @@ const AllegroDescriptionEditor = () => {
                                     }} 
                                   />
                                   <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
-                                    Plik: {section.image1 || 'BRAK NAZWY PLIKU'}
+                                    {section.image1}
                                   </div>
                                   <div style={{ fontSize: '10px', color: '#6b7280' }}>
-                                    Ścieżka: {generateImagePath(section.image1) || 'BRAK ŚCIEŻKI'}
+                                    Ścieżka: {generateImagePath(section.image1)}
                                   </div>
                                 </div>
                               ) : (
@@ -1049,10 +1075,10 @@ const AllegroDescriptionEditor = () => {
                                     }} 
                                   />
                                   <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
-                                    Plik: {section.image1 || 'BRAK NAZWY PLIKU'}
+                                    {section.image1}
                                   </div>
                                   <div style={{ fontSize: '10px', color: '#6b7280' }}>
-                                    Ścieżka: {generateImagePath(section.image1) || 'BRAK ŚCIEŻKI'}
+                                    Ścieżka: {generateImagePath(section.image1)}
                                   </div>
                                 </div>
                               ) : (
@@ -1149,10 +1175,10 @@ const AllegroDescriptionEditor = () => {
                                 }} 
                               />
                               <div style={{ fontSize: '14px', color: '#374151', marginBottom: '4px' }}>
-                                Plik: {section.image1 || 'BRAK NAZWY PLIKU'}
+                                {section.image1}
                               </div>
                               <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                Ścieżka: {generateImagePath(section.image1) || 'BRAK ŚCIEŻKI'}
+                                Ścieżka: {generateImagePath(section.image1)}
                               </div>
                             </div>
                           ) : (
@@ -1238,10 +1264,10 @@ const AllegroDescriptionEditor = () => {
                                     }} 
                                   />
                                   <div style={{ fontSize: '11px', color: '#374151', marginBottom: '2px' }}>
-                                    Plik1: {section.image1 || 'BRAK'}
+                                    {section.image1}
                                   </div>
                                   <div style={{ fontSize: '9px', color: '#6b7280' }}>
-                                    {generateImagePath(section.image1) || 'BRAK ŚCIEŻKI'}
+                                    {generateImagePath(section.image1)}
                                   </div>
                                 </div>
                               ) : (
@@ -1332,10 +1358,10 @@ const AllegroDescriptionEditor = () => {
                                     }} 
                                   />
                                   <div style={{ fontSize: '11px', color: '#374151', marginBottom: '2px' }}>
-                                    Plik2: {section.image2 || 'BRAK'}
+                                    {section.image2}
                                   </div>
                                   <div style={{ fontSize: '9px', color: '#6b7280' }}>
-                                    {generateImagePath(section.image2) || 'BRAK ŚCIEŻKI'}
+                                    {generateImagePath(section.image2)}
                                   </div>
                                 </div>
                               ) : (
