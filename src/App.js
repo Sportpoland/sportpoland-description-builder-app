@@ -109,15 +109,9 @@ const AllegroDescriptionEditor = () => {
   };
 
   const updateSection = (id, field, value) => {
-    console.log('🔄 updateSection wywołane:', id, field, value);
-    setSections(sections.map(section => {
-      if (section.id === id) {
-        const updated = { ...section, [field]: value };
-        console.log('📝 Sekcja po aktualizacji:', updated);
-        return updated;
-      }
-      return section;
-    }));
+    setSections(sections.map(section => 
+      section.id === id ? { ...section, [field]: value } : section
+    ));
   };
 
   const updateIconsGrid = (sectionId, iconIndex, field, value) => {
@@ -173,36 +167,19 @@ const AllegroDescriptionEditor = () => {
       const imageName = file.name;
       const imageURL = URL.createObjectURL(file);
       
-      console.log('📸 Dodaję zdjęcie:', imageName, 'do sekcji:', sectionId, 'pole:', imageField);
-      
       // Aktualizujemy sekcję jednym setState
       setSections(prevSections => {
-        const newSections = prevSections.map(section => {
+        return prevSections.map(section => {
           if (section.id === sectionId) {
             const previewField = imageField === 'image1' ? 'imagePreview1' : 'imagePreview2';
-            const updatedSection = {
+            return {
               ...section,
               [imageField]: imageName,
               [previewField]: imageURL
             };
-            console.log('✅ Sekcja zaktualizowana:', {
-              id: updatedSection.id,
-              image1: updatedSection.image1,
-              image2: updatedSection.image2,
-              imagePreview1: updatedSection.imagePreview1 ? 'JEST' : 'BRAK',
-              imagePreview2: updatedSection.imagePreview2 ? 'JEST' : 'BRAK'
-            });
-            return updatedSection;
           }
           return section;
         });
-        console.log('🔄 Wszystkie sekcje po aktualizacji:', newSections.map(s => ({
-          id: s.id,
-          type: s.type,
-          image1: s.image1,
-          image2: s.image2
-        })));
-        return newSections;
       });
     }
   };
@@ -318,8 +295,6 @@ const AllegroDescriptionEditor = () => {
     let html = '';
     
     sections.forEach(section => {
-      console.log('Przetwarzam sekcję:', section.type, 'image1:', section.image1, 'image2:', section.image2);
-      
       const containerStyle = `background-color: ${section.backgroundColor}; margin-bottom: 20px; padding: 20px; border-radius: 15px;`;
       
       switch (section.type) {
@@ -330,11 +305,9 @@ const AllegroDescriptionEditor = () => {
           break;
           
         case 'image-left':
-          const imagePath1 = generateImagePath(section.image1);
-          console.log('Ścieżka obrazu 1:', imagePath1);
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
-              ${section.image1 ? `<img src="${imagePath1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
               <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
@@ -343,36 +316,29 @@ const AllegroDescriptionEditor = () => {
           break;
           
         case 'image-right':
-          const imagePath2 = generateImagePath(section.image1);
-          console.log('Ścieżka obrazu 2:', imagePath2);
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
               <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
-              ${section.image1 ? `<img src="${imagePath2}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
           </div>\n`;
           break;
           
         case 'image-only':
-          const imagePath3 = generateImagePath(section.image1);
-          console.log('Ścieżka obrazu 3:', imagePath3);
           html += `<div style="text-align: center; ${containerStyle}">
-            ${section.image1 ? `<img src="${imagePath3}" style="max-width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+            ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="max-width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
           </div>\n`;
           break;
           
         case 'two-images':
-          const imagePath4 = generateImagePath(section.image1);
-          const imagePath5 = generateImagePath(section.image2);
-          console.log('Ścieżka obrazu 4:', imagePath4, 'Ścieżka obrazu 5:', imagePath5);
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 5px; text-align: center;">
-              ${section.image1 ? `<img src="${imagePath4}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 5px; text-align: center;">
-              ${section.image2 ? `<img src="${imagePath5}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image2 ? `<img src="${generateImagePath(section.image2)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
           </div>\n`;
           break;
@@ -399,9 +365,7 @@ const AllegroDescriptionEditor = () => {
   };
 
   const copyToClipboard = async () => {
-    console.log('Sekcje przed eksportem:', sections);
     const html = generateHTML();
-    console.log('Wygenerowany HTML:', html);
     try {
       await navigator.clipboard.writeText(html);
       alert('HTML skopiowany do schowka!');
@@ -532,7 +496,7 @@ const AllegroDescriptionEditor = () => {
                     alignItems: 'center',
                     gap: '8px',
                     padding: '10px 16px',
-                    backgroundColor: '#dc2626',
+                    backgroundColor: '#f87171',
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
@@ -540,17 +504,17 @@ const AllegroDescriptionEditor = () => {
                     fontSize: '14px',
                     fontWeight: '500',
                     transition: 'all 0.2s ease',
-                    boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
+                    boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#b91c1c';
+                    e.target.style.backgroundColor = '#ef4444';
                     e.target.style.transform = 'translateY(-1px)';
-                    e.target.style.boxShadow = '0 4px 8px rgba(220, 38, 38, 0.3)';
+                    e.target.style.boxShadow = '0 4px 8px rgba(239, 68, 68, 0.3)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#dc2626';
+                    e.target.style.backgroundColor = '#f87171';
                     e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 2px 4px rgba(220, 38, 38, 0.2)';
+                    e.target.style.boxShadow = '0 2px 4px rgba(248, 113, 113, 0.2)';
                   }}
                 >
                   <span>{type.icon}</span>
@@ -802,12 +766,21 @@ const AllegroDescriptionEditor = () => {
                       <button
                         onClick={() => updateSection(section.id, 'backgroundColor', '#ffffff')}
                         style={{
-                          padding: '4px 8px',
+                          padding: '6px 12px',
                           fontSize: '12px',
-                          backgroundColor: '#e5e7eb',
+                          backgroundColor: '#6b7280',
+                          color: 'white',
                           border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#4b5563';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#6b7280';
                         }}
                       >
                         Reset
@@ -928,7 +901,7 @@ const AllegroDescriptionEditor = () => {
                                 style={{
                                   marginTop: '8px',
                                   padding: '8px 16px',
-                                  backgroundColor: '#dc2626',
+                                  backgroundColor: '#f87171',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '8px',
@@ -936,14 +909,14 @@ const AllegroDescriptionEditor = () => {
                                   fontSize: '14px',
                                   fontWeight: '500',
                                   transition: 'all 0.2s ease',
-                                  boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
+                                  boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.target.style.backgroundColor = '#b91c1c';
+                                  e.target.style.backgroundColor = '#ef4444';
                                   e.target.style.transform = 'translateY(-1px)';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.target.style.backgroundColor = '#dc2626';
+                                  e.target.style.backgroundColor = '#f87171';
                                   e.target.style.transform = 'translateY(0)';
                                 }}
                               >
@@ -1102,7 +1075,7 @@ const AllegroDescriptionEditor = () => {
                                 style={{
                                   marginTop: '8px',
                                   padding: '8px 16px',
-                                  backgroundColor: '#dc2626',
+                                  backgroundColor: '#f87171',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '8px',
@@ -1110,14 +1083,14 @@ const AllegroDescriptionEditor = () => {
                                   fontSize: '14px',
                                   fontWeight: '500',
                                   transition: 'all 0.2s ease',
-                                  boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
+                                  boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.target.style.backgroundColor = '#b91c1c';
+                                  e.target.style.backgroundColor = '#ef4444';
                                   e.target.style.transform = 'translateY(-1px)';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.target.style.backgroundColor = '#dc2626';
+                                  e.target.style.backgroundColor = '#f87171';
                                   e.target.style.transform = 'translateY(0)';
                                 }}
                               >
@@ -1291,7 +1264,7 @@ const AllegroDescriptionEditor = () => {
                                 style={{
                                   marginTop: '8px',
                                   padding: '6px 12px',
-                                  backgroundColor: '#dc2626',
+                                  backgroundColor: '#f87171',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '6px',
@@ -1301,10 +1274,10 @@ const AllegroDescriptionEditor = () => {
                                   transition: 'all 0.2s ease'
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.target.style.backgroundColor = '#b91c1c';
+                                  e.target.style.backgroundColor = '#ef4444';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.target.style.backgroundColor = '#dc2626';
+                                  e.target.style.backgroundColor = '#f87171';
                                 }}
                               >
                                 Wybierz
@@ -1385,7 +1358,7 @@ const AllegroDescriptionEditor = () => {
                                 style={{
                                   marginTop: '8px',
                                   padding: '6px 12px',
-                                  backgroundColor: '#dc2626',
+                                  backgroundColor: '#f87171',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '6px',
@@ -1395,10 +1368,10 @@ const AllegroDescriptionEditor = () => {
                                   transition: 'all 0.2s ease'
                                 }}
                                 onMouseEnter={(e) => {
-                                  e.target.style.backgroundColor = '#b91c1c';
+                                  e.target.style.backgroundColor = '#ef4444';
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.target.style.backgroundColor = '#dc2626';
+                                  e.target.style.backgroundColor = '#f87171';
                                 }}
                               >
                                 Wybierz
@@ -1504,7 +1477,7 @@ const AllegroDescriptionEditor = () => {
                             onClick={() => addIconToGrid(section.id)}
                             style={{
                               padding: '10px 20px',
-                              backgroundColor: '#dc2626',
+                              backgroundColor: '#f87171',
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
@@ -1512,14 +1485,14 @@ const AllegroDescriptionEditor = () => {
                               fontSize: '14px',
                               fontWeight: '500',
                               transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
+                              boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
                             }}
                             onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#b91c1c';
+                              e.target.style.backgroundColor = '#ef4444';
                               e.target.style.transform = 'translateY(-1px)';
                             }}
                             onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#dc2626';
+                              e.target.style.backgroundColor = '#f87171';
                               e.target.style.transform = 'translateY(0)';
                             }}
                           >
@@ -1567,50 +1540,13 @@ const AllegroDescriptionEditor = () => {
                       👁️ {showPreview ? 'Ukryj podgląd' : 'Pokaż podgląd'}
                     </button>
                     <button
-                      onClick={() => {
-                        console.log('🔍 DEBUG - Aktualny stan sekcji:', sections.map(s => ({
-                          id: s.id,
-                          type: s.type,
-                          image1: s.image1 || 'BRAK',
-                          image2: s.image2 || 'BRAK',
-                          hasPreview1: !!s.imagePreview1,
-                          hasPreview2: !!s.imagePreview2
-                        })));
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 16px',
-                        backgroundColor: '#f59e0b',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 4px rgba(245, 158, 11, 0.2)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#d97706';
-                        e.target.style.transform = 'translateY(-1px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#f59e0b';
-                        e.target.style.transform = 'translateY(0)';
-                      }}
-                    >
-                      🐛 Debug Stan
-                    </button>
-                    <button
                       onClick={copyToClipboard}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
                         padding: '10px 16px',
-                        backgroundColor: '#dc2626',
+                        backgroundColor: '#f87171',
                         color: 'white',
                         border: 'none',
                         borderRadius: '8px',
@@ -1618,17 +1554,17 @@ const AllegroDescriptionEditor = () => {
                         fontSize: '14px',
                         fontWeight: '500',
                         transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
+                        boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#b91c1c';
+                        e.target.style.backgroundColor = '#ef4444';
                         e.target.style.transform = 'translateY(-1px)';
-                        e.target.style.boxShadow = '0 4px 8px rgba(220, 38, 38, 0.3)';
+                        e.target.style.boxShadow = '0 4px 8px rgba(239, 68, 68, 0.3)';
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#dc2626';
+                        e.target.style.backgroundColor = '#f87171';
                         e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 2px 4px rgba(220, 38, 38, 0.2)';
+                        e.target.style.boxShadow = '0 2px 4px rgba(248, 113, 113, 0.2)';
                       }}
                     >
                       📋 Skopiuj HTML
@@ -1640,7 +1576,7 @@ const AllegroDescriptionEditor = () => {
                         alignItems: 'center',
                         gap: '8px',
                         padding: '10px 16px',
-                        backgroundColor: '#dc2626',
+                        backgroundColor: '#f87171',
                         color: 'white',
                         border: 'none',
                         borderRadius: '8px',
@@ -1648,17 +1584,17 @@ const AllegroDescriptionEditor = () => {
                         fontSize: '14px',
                         fontWeight: '500',
                         transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
+                        boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#b91c1c';
+                        e.target.style.backgroundColor = '#ef4444';
                         e.target.style.transform = 'translateY(-1px)';
-                        e.target.style.boxShadow = '0 4px 8px rgba(220, 38, 38, 0.3)';
+                        e.target.style.boxShadow = '0 4px 8px rgba(239, 68, 68, 0.3)';
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#dc2626';
+                        e.target.style.backgroundColor = '#f87171';
                         e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 2px 4px rgba(220, 38, 38, 0.2)';
+                        e.target.style.boxShadow = '0 2px 4px rgba(248, 113, 113, 0.2)';
                       }}
                     >
                       💾 Pobierz HTML
