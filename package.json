@@ -1,7 +1,7 @@
 {
-  "name": "allegro-editor",
+  "name": "sportpoland-editor",
   "version": "1.0.0",
-  "description": "Edytor opisów produktów w stylu Allegro",
+  "description": "Edytor opisów produktów dla IdoSell",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
