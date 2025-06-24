@@ -109,9 +109,15 @@ const AllegroDescriptionEditor = () => {
   };
 
   const updateSection = (id, field, value) => {
-    setSections(sections.map(section => 
-      section.id === id ? { ...section, [field]: value } : section
-    ));
+    console.log('🔄 updateSection wywołane:', id, field, value);
+    setSections(sections.map(section => {
+      if (section.id === id) {
+        const updated = { ...section, [field]: value };
+        console.log('📝 Sekcja po aktualizacji:', updated);
+        return updated;
+      }
+      return section;
+    }));
   };
 
   const updateIconsGrid = (sectionId, iconIndex, field, value) => {
@@ -167,12 +173,37 @@ const AllegroDescriptionEditor = () => {
       const imageName = file.name;
       const imageURL = URL.createObjectURL(file);
       
-      console.log('Zapisuję zdjęcie:', imageName, 'do pola:', imageField);
+      console.log('📸 Dodaję zdjęcie:', imageName, 'do sekcji:', sectionId, 'pole:', imageField);
       
-      updateSection(sectionId, imageField, imageName);
-      // Zapisujemy URL podglądu w odpowiednim polu
-      const previewField = imageField === 'image1' ? 'imagePreview1' : 'imagePreview2';
-      updateSection(sectionId, previewField, imageURL);
+      // Aktualizujemy sekcję jednym setState
+      setSections(prevSections => {
+        const newSections = prevSections.map(section => {
+          if (section.id === sectionId) {
+            const previewField = imageField === 'image1' ? 'imagePreview1' : 'imagePreview2';
+            const updatedSection = {
+              ...section,
+              [imageField]: imageName,
+              [previewField]: imageURL
+            };
+            console.log('✅ Sekcja zaktualizowana:', {
+              id: updatedSection.id,
+              image1: updatedSection.image1,
+              image2: updatedSection.image2,
+              imagePreview1: updatedSection.imagePreview1 ? 'JEST' : 'BRAK',
+              imagePreview2: updatedSection.imagePreview2 ? 'JEST' : 'BRAK'
+            });
+            return updatedSection;
+          }
+          return section;
+        });
+        console.log('🔄 Wszystkie sekcje po aktualizacji:', newSections.map(s => ({
+          id: s.id,
+          type: s.type,
+          image1: s.image1,
+          image2: s.image2
+        })));
+        return newSections;
+      });
     }
   };
 
@@ -1188,10 +1219,10 @@ const AllegroDescriptionEditor = () => {
                                     }} 
                                   />
                                   <div style={{ fontSize: '11px', color: '#374151', marginBottom: '2px' }}>
-                                    {section.image1}
+                                    Plik1: {section.image1 || 'BRAK'}
                                   </div>
                                   <div style={{ fontSize: '9px', color: '#6b7280' }}>
-                                    {generateImagePath(section.image1)}
+                                    {generateImagePath(section.image1) || 'BRAK ŚCIEŻKI'}
                                   </div>
                                 </div>
                               ) : (
@@ -1274,10 +1305,10 @@ const AllegroDescriptionEditor = () => {
                                     }} 
                                   />
                                   <div style={{ fontSize: '11px', color: '#374151', marginBottom: '2px' }}>
-                                    {section.image2}
+                                    Plik2: {section.image2 || 'BRAK'}
                                   </div>
                                   <div style={{ fontSize: '9px', color: '#6b7280' }}>
-                                    {generateImagePath(section.image2)}
+                                    {generateImagePath(section.image2) || 'BRAK ŚCIEŻKI'}
                                   </div>
                                 </div>
                               ) : (
@@ -1449,6 +1480,31 @@ const AllegroDescriptionEditor = () => {
                       }}
                     >
                       👁️ {showPreview ? 'Ukryj podgląd' : 'Pokaż podgląd'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        console.log('🔍 DEBUG - Aktualny stan sekcji:', sections.map(s => ({
+                          id: s.id,
+                          type: s.type,
+                          image1: s.image1 || 'BRAK',
+                          image2: s.image2 || 'BRAK',
+                          hasPreview1: !!s.imagePreview1,
+                          hasPreview2: !!s.imagePreview2
+                        })));
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 16px',
+                        backgroundColor: '#f59e0b',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🐛 Debug Stan
                     </button>
                     <button
                       onClick={copyToClipboard}
