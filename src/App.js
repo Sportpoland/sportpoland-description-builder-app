@@ -1,6 +1,6 @@
-console.log("NEW VERSION LOADED - TEST 123");
-
 import React from 'react';
+
+console.log("NOWA WERSJA ZAŁADOWANA - TEST 456");
 
 function App() {
   return React.createElement('div', {
