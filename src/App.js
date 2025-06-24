@@ -847,10 +847,10 @@ const AllegroDescriptionEditor = () => {
                                     }} 
                                   />
                                   <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
-                                    {section.image1}
+                                    Plik: {section.image1 || 'BRAK NAZWY PLIKU'}
                                   </div>
                                   <div style={{ fontSize: '10px', color: '#6b7280' }}>
-                                    Ścieżka: {generateImagePath(section.image1)}
+                                    Ścieżka: {generateImagePath(section.image1) || 'BRAK ŚCIEŻKI'}
                                   </div>
                                 </div>
                               ) : (
@@ -1010,10 +1010,10 @@ const AllegroDescriptionEditor = () => {
                                     }} 
                                   />
                                   <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
-                                    {section.image1}
+                                    Plik: {section.image1 || 'BRAK NAZWY PLIKU'}
                                   </div>
                                   <div style={{ fontSize: '10px', color: '#6b7280' }}>
-                                    Ścieżka: {generateImagePath(section.image1)}
+                                    Ścieżka: {generateImagePath(section.image1) || 'BRAK ŚCIEŻKI'}
                                   </div>
                                 </div>
                               ) : (
@@ -1099,10 +1099,10 @@ const AllegroDescriptionEditor = () => {
                                 }} 
                               />
                               <div style={{ fontSize: '14px', color: '#374151', marginBottom: '4px' }}>
-                                {section.image1}
+                                Plik: {section.image1 || 'BRAK NAZWY PLIKU'}
                               </div>
                               <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                Ścieżka: {generateImagePath(section.image1)}
+                                Ścieżka: {generateImagePath(section.image1) || 'BRAK ŚCIEŻKI'}
                               </div>
                             </div>
                           ) : (
