@@ -165,7 +165,9 @@ const AllegroDescriptionEditor = () => {
     const file = event.target.files[0];
     if (file) {
       const imageName = file.name;
-      const imageURL = URL.createObjectURL(file); // Tworzymy URL do podglądu
+      const imageURL = URL.createObjectURL(file);
+      
+      console.log('Zapisuję zdjęcie:', imageName, 'do pola:', imageField);
       
       updateSection(sectionId, imageField, imageName);
       // Zapisujemy URL podglądu w odpowiednim polu
@@ -198,7 +200,11 @@ const AllegroDescriptionEditor = () => {
   };
 
   const generateImagePath = (imageName) => {
-    if (!productBrand || !productCode || !imageName) return imageName;
+    if (!imageName) return '';
+    if (!productBrand || !productCode) {
+      console.warn('Marka produktu lub kod produktu nie są wypełnione. Używam tylko nazwy pliku:', imageName);
+      return imageName;
+    }
     return `/data/include/cms/sportpoland_com/pliki-opisy/${productBrand}/${productCode}/${imageName}`;
   };
 
@@ -281,6 +287,8 @@ const AllegroDescriptionEditor = () => {
     let html = '';
     
     sections.forEach(section => {
+      console.log('Przetwarzam sekcję:', section.type, 'image1:', section.image1, 'image2:', section.image2);
+      
       const containerStyle = `background-color: ${section.backgroundColor}; margin-bottom: 20px; padding: 20px; border-radius: 15px;`;
       
       switch (section.type) {
@@ -291,9 +299,11 @@ const AllegroDescriptionEditor = () => {
           break;
           
         case 'image-left':
+          const imagePath1 = generateImagePath(section.image1);
+          console.log('Ścieżka obrazu 1:', imagePath1);
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
-              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image1 ? `<img src="${imagePath1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
               <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
@@ -302,29 +312,36 @@ const AllegroDescriptionEditor = () => {
           break;
           
         case 'image-right':
+          const imagePath2 = generateImagePath(section.image1);
+          console.log('Ścieżka obrazu 2:', imagePath2);
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
               <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
-              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image1 ? `<img src="${imagePath2}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
           </div>\n`;
           break;
           
         case 'image-only':
+          const imagePath3 = generateImagePath(section.image1);
+          console.log('Ścieżka obrazu 3:', imagePath3);
           html += `<div style="text-align: center; ${containerStyle}">
-            ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="max-width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+            ${section.image1 ? `<img src="${imagePath3}" style="max-width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
           </div>\n`;
           break;
           
         case 'two-images':
+          const imagePath4 = generateImagePath(section.image1);
+          const imagePath5 = generateImagePath(section.image2);
+          console.log('Ścieżka obrazu 4:', imagePath4, 'Ścieżka obrazu 5:', imagePath5);
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 5px; text-align: center;">
-              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image1 ? `<img src="${imagePath4}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 5px; text-align: center;">
-              ${section.image2 ? `<img src="${generateImagePath(section.image2)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image2 ? `<img src="${imagePath5}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
           </div>\n`;
           break;
@@ -351,7 +368,9 @@ const AllegroDescriptionEditor = () => {
   };
 
   const copyToClipboard = async () => {
+    console.log('Sekcje przed eksportem:', sections);
     const html = generateHTML();
+    console.log('Wygenerowany HTML:', html);
     try {
       await navigator.clipboard.writeText(html);
       alert('HTML skopiowany do schowka!');
