@@ -1083,4 +1083,4 @@ export default App;
                   {type.name}
                 </button>
               ))}
-            </div
+            </div>
