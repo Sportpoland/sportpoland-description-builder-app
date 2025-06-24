@@ -1,4 +1,4 @@
-# Allegro Editor - Edytor Opisów Produktów
+# Allegro Editor - Edytor Opisów Produktów v2
 
 Profesjonalny edytor do tworzenia opisów produktów w stylu Allegro z obsługą różnych layoutów, formatowania tekstu i dodawania zdjęć.
 
