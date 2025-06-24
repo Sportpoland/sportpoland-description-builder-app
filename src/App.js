@@ -343,218 +343,6 @@ const AllegroDescriptionEditor = () => {
                 </div>
               </div>
             </div>
-
-          {/* Toolbar dodawania sekcji */}
-          <div className="border-b p-4">
-            <h3 className="text-lg font-semibold mb-3">Dodaj sekcję:</h3>
-            <div className="flex flex-wrap gap-2">
-              {sectionTypes.map(type => {
-                const IconComponent = type.icon;
-                return (
-                  <button
-                    key={type.id}
-                    onClick={() => addSection(type.id)}
-                    className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
-                  >
-                    <IconComponent className="w-4 h-4" />
-                    {type.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Sekcje */}
-          <div className="p-4">
-            {sections.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Type className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg">Dodaj pierwszą sekcję aby rozpocząć tworzenie opisu</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {sections.map((section, index) => (
-                  <div key={section.id} className="border border-gray-200 rounded-lg">
-                    {/* Panel kontrolny sekcji */}
-                    <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-b">
-                      <span className="text-sm font-medium text-gray-700">
-                        {sectionTypes.find(t => t.id === section.type)?.name}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => moveSection(section.id, 'up')}
-                          disabled={index === 0}
-                          className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => moveSection(section.id, 'down')}
-                          disabled={index === sections.length - 1}
-                          className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => copySection(section.id)}
-                          className="p-1 text-gray-500 hover:text-gray-700"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => deleteSection(section.id)}
-                          className="p-1 text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Formatowanie tekstu i tła dla sekcji */}
-                    <div className="bg-gray-50 px-4 py-2 border-b">
-                      <div className="flex items-center justify-between">
-                        {/* Formatowanie tekstu dla sekcji z tekstem */}
-                        {['text-only', 'image-left', 'image-right'].includes(section.type) && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <select
-                              value={section.textFormatting.headingLevel}
-                              onChange={(e) => updateTextFormatting(section.id, 'headingLevel', e.target.value)}
-                              className="px-2 py-1 border rounded"
-                            >
-                              <option value="p">Paragraf</option>
-                              <option value="h1">H1</option>
-                              <option value="h2">H2</option>
-                              <option value="h3">H3</option>
-                              <option value="h4">H4</option>
-                            </select>
-                            <button
-                              onClick={() => updateTextFormatting(section.id, 'bold', !section.textFormatting.bold)}
-                              className={`px-2 py-1 rounded ${section.textFormatting.bold ? 'bg-blue-500 text-white' : 'bg-white border'}`}
-                            >
-                              <strong>B</strong>
-                            </button>
-                            <button
-                              onClick={() => updateTextFormatting(section.id, 'italic', !section.textFormatting.italic)}
-                              className={`px-2 py-1 rounded ${section.textFormatting.italic ? 'bg-blue-500 text-white' : 'bg-white border'}`}
-                            >
-                              <em>I</em>
-                            </button>
-                            <button
-                              onClick={() => updateTextFormatting(section.id, 'underline', !section.textFormatting.underline)}
-                              className={`px-2 py-1 rounded ${section.textFormatting.underline ? 'bg-blue-500 text-white' : 'bg-white border'}`}
-                            >
-                              <u>U</u>
-                            </button>
-                            <select
-                              value={section.textFormatting.fontSize}
-                              onChange={(e) => updateTextFormatting(section.id, 'fontSize', e.target.value)}
-                              className="px-2 py-1 border rounded"
-                            >
-                              <option value="12">12px</option>
-                              <option value="14">14px</option>
-                              <option value="16">16px</option>
-                              <option value="18">18px</option>
-                              <option value="20">20px</option>
-                              <option value="24">24px</option>
-                            </select>
-                            <select
-                              value={section.textFormatting.textAlign}
-                              onChange={(e) => updateTextFormatting(section.id, 'textAlign', e.target.value)}
-                              className="px-2 py-1 border rounded"
-                            >
-                              <option value="left">Do lewej</option>
-                              <option value="center">Na środek</option>
-                              <option value="right">Do prawej</option>
-                              <option value="justify">Wyjustuj</option>
-                            </select>
-                          </div>
-                        )}
-                        
-                        {/* Kolor tła dla wszystkich sekcji */}
-                        <div className="flex items-center gap-2 text-sm">
-                          <label className="text-gray-600">Kolor tła:</label>
-                          <input
-                            type="color"
-                            value={section.backgroundColor}
-                            onChange={(e) => updateSection(section.id, 'backgroundColor', e.target.value)}
-                            className="w-8 h-8 border rounded cursor-pointer"
-                          />
-                          <button
-                            onClick={() => updateSection(section.id, 'backgroundColor', '#ffffff')}
-                            className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
-                          >
-                            Reset
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Zawartość sekcji */}
-                    <div style={{ backgroundColor: section.backgroundColor }}>
-                      {renderSectionContent(section)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Panel eksportu */}
-            {sections.length > 0 && (
-              <div className="mt-8 border-t pt-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Eksportuj opis</h3>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setShowPreview(!showPreview)}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                    >
-                      <Eye className="w-4 h-4" />
-                      {showPreview ? 'Ukryj podgląd' : 'Pokaż podgląd'}
-                    </button>
-                    <button
-                      onClick={copyToClipboard}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                    >
-                      <Copy className="w-4 h-4" />
-                      Skopiuj HTML
-                    </button>
-                    <button
-                      onClick={downloadHTML}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      <Download className="w-4 h-4" />
-                      Pobierz HTML
-                    </button>
-                  </div>
-                </div>
-
-                {showPreview && (
-                  <div className="mt-4">
-                    <h4 className="font-medium mb-2">Podgląd:</h4>
-                    <div className="border rounded p-4 bg-white" dangerouslySetInnerHTML={{ __html: generateHTML() }} />
-                    
-                    <h4 className="font-medium mb-2 mt-4">Kod HTML:</h4>
-                    <textarea
-                      readOnly
-                      value={generateHTML()}
-                      className="w-full h-40 p-2 border rounded bg-gray-50 text-sm font-mono"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-function App() {
-  return <AllegroDescriptionEditor />;
-}
-
-export default App;
           </div>
         );
         
@@ -739,4 +527,205 @@ export default App;
           </div>
 
           <div className="border-b p-4">
-            <h3 className="text-lg font-semibold mb-3">Dodaj sekcję:</h3
+            <h3 className="text-lg font-semibold mb-3">Dodaj sekcję:</h3>
+            <div className="flex flex-wrap gap-2">
+              {sectionTypes.map(type => {
+                const IconComponent = type.icon;
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => addSection(type.id)}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+                  >
+                    <IconComponent className="w-4 h-4" />
+                    {type.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="p-4">
+            {sections.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Type className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg">Dodaj pierwszą sekcję aby rozpocząć tworzenie opisu</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {sections.map((section, index) => (
+                  <div key={section.id} className="border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-b">
+                      <span className="text-sm font-medium text-gray-700">
+                        {sectionTypes.find(t => t.id === section.type)?.name}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => moveSection(section.id, 'up')}
+                          disabled={index === 0}
+                          className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => moveSection(section.id, 'down')}
+                          disabled={index === sections.length - 1}
+                          className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => copySection(section.id)}
+                          className="p-1 text-gray-500 hover:text-gray-700"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteSection(section.id)}
+                          className="p-1 text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 px-4 py-2 border-b">
+                      <div className="flex items-center justify-between">
+                        {['text-only', 'image-left', 'image-right'].includes(section.type) && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <select
+                              value={section.textFormatting.headingLevel}
+                              onChange={(e) => updateTextFormatting(section.id, 'headingLevel', e.target.value)}
+                              className="px-2 py-1 border rounded"
+                            >
+                              <option value="p">Paragraf</option>
+                              <option value="h1">H1</option>
+                              <option value="h2">H2</option>
+                              <option value="h3">H3</option>
+                              <option value="h4">H4</option>
+                            </select>
+                            <button
+                              onClick={() => updateTextFormatting(section.id, 'bold', !section.textFormatting.bold)}
+                              className={`px-2 py-1 rounded ${section.textFormatting.bold ? 'bg-blue-500 text-white' : 'bg-white border'}`}
+                            >
+                              <strong>B</strong>
+                            </button>
+                            <button
+                              onClick={() => updateTextFormatting(section.id, 'italic', !section.textFormatting.italic)}
+                              className={`px-2 py-1 rounded ${section.textFormatting.italic ? 'bg-blue-500 text-white' : 'bg-white border'}`}
+                            >
+                              <em>I</em>
+                            </button>
+                            <button
+                              onClick={() => updateTextFormatting(section.id, 'underline', !section.textFormatting.underline)}
+                              className={`px-2 py-1 rounded ${section.textFormatting.underline ? 'bg-blue-500 text-white' : 'bg-white border'}`}
+                            >
+                              <u>U</u>
+                            </button>
+                            <select
+                              value={section.textFormatting.fontSize}
+                              onChange={(e) => updateTextFormatting(section.id, 'fontSize', e.target.value)}
+                              className="px-2 py-1 border rounded"
+                            >
+                              <option value="12">12px</option>
+                              <option value="14">14px</option>
+                              <option value="16">16px</option>
+                              <option value="18">18px</option>
+                              <option value="20">20px</option>
+                              <option value="24">24px</option>
+                            </select>
+                            <select
+                              value={section.textFormatting.textAlign}
+                              onChange={(e) => updateTextFormatting(section.id, 'textAlign', e.target.value)}
+                              className="px-2 py-1 border rounded"
+                            >
+                              <option value="left">Do lewej</option>
+                              <option value="center">Na środek</option>
+                              <option value="right">Do prawej</option>
+                              <option value="justify">Wyjustuj</option>
+                            </select>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-2 text-sm">
+                          <label className="text-gray-600">Kolor tła:</label>
+                          <input
+                            type="color"
+                            value={section.backgroundColor}
+                            onChange={(e) => updateSection(section.id, 'backgroundColor', e.target.value)}
+                            className="w-8 h-8 border rounded cursor-pointer"
+                          />
+                          <button
+                            onClick={() => updateSection(section.id, 'backgroundColor', '#ffffff')}
+                            className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+                          >
+                            Reset
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ backgroundColor: section.backgroundColor }}>
+                      {renderSectionContent(section)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {sections.length > 0 && (
+              <div className="mt-8 border-t pt-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Eksportuj opis</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowPreview(!showPreview)}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    >
+                      <Eye className="w-4 h-4" />
+                      {showPreview ? 'Ukryj podgląd' : 'Pokaż podgląd'}
+                    </button>
+                    <button
+                      onClick={copyToClipboard}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Skopiuj HTML
+                    </button>
+                    <button
+                      onClick={downloadHTML}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      <Download className="w-4 h-4" />
+                      Pobierz HTML
+                    </button>
+                  </div>
+                </div>
+
+                {showPreview && (
+                  <div className="mt-4">
+                    <h4 className="font-medium mb-2">Podgląd:</h4>
+                    <div className="border rounded p-4 bg-white" dangerouslySetInnerHTML={{ __html: generateHTML() }} />
+                    
+                    <h4 className="font-medium mb-2 mt-4">Kod HTML:</h4>
+                    <textarea
+                      readOnly
+                      value={generateHTML()}
+                      className="w-full h-40 p-2 border rounded bg-gray-50 text-sm font-mono"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+function App() {
+  return <AllegroDescriptionEditor />;
+}
+
+export default App;
