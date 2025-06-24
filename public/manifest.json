@@ -1,7 +1,7 @@
 {
-  "short_name": "Allegro Editor",
-  "name": "Allegro Description Editor", 
-  "description": "Edytor opisów produktów w stylu Allegro",
+  "short_name": "Sporptoland Editor",
+  "name": "Sporptoland Description Editor", 
+  "description": "Edytor opisów produktów dla IdoSell",
   "icons": [
     {
       "src": "favicon.ico",
