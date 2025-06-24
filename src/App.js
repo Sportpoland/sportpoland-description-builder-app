@@ -3,6 +3,10 @@ import React, { useState, useRef } from 'react';
 const AllegroDescriptionEditor = () => {
   const [sections, setSections] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [productBrand, setProductBrand] = useState('');
+  const [productCode, setProductCode] = useState('');
+  const [history, setHistory] = useState([]);
+  const [currentStep, setCurrentStep] = useState(0);
   const fileInputRefs = useRef({});
 
   const sectionTypes = [
@@ -14,12 +18,34 @@ const AllegroDescriptionEditor = () => {
     { id: 'icons-grid', name: 'Siatka ikon z opisami', icon: '⊞' }
   ];
 
+  // Historia dla przycisku wstecz
+  const saveToHistory = () => {
+    const newHistory = history.slice(0, currentStep + 1);
+    newHistory.push({
+      sections: JSON.parse(JSON.stringify(sections)),
+      productBrand,
+      productCode
+    });
+    setHistory(newHistory);
+    setCurrentStep(newHistory.length - 1);
+  };
+
+  const goBack = () => {
+    if (currentStep > 0) {
+      const previousState = history[currentStep - 1];
+      setSections(previousState.sections);
+      setProductBrand(previousState.productBrand);
+      setProductCode(previousState.productCode);
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   const addSection = (type) => {
+    saveToHistory();
     const newSection = {
       id: Date.now(),
       type,
-      text: type === 'text-only' || type === 'image-left' || type === 'image-right' ? 
-        '<p>Wprowadź tekst...</p>' : '',
+      text: '',
       image1: '',
       image2: '',
       icons: type === 'icons-grid' ? [
@@ -37,6 +63,7 @@ const AllegroDescriptionEditor = () => {
   };
 
   const deleteSection = (id) => {
+    saveToHistory();
     setSections(sections.filter(section => section.id !== id));
   };
 
@@ -47,6 +74,7 @@ const AllegroDescriptionEditor = () => {
       (direction === 'down' && currentIndex === sections.length - 1)
     ) return;
 
+    saveToHistory();
     const newSections = [...sections];
     const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     [newSections[currentIndex], newSections[targetIndex]] = [newSections[targetIndex], newSections[currentIndex]];
@@ -54,6 +82,7 @@ const AllegroDescriptionEditor = () => {
   };
 
   const copySection = (id) => {
+    saveToHistory();
     const sectionToCopy = sections.find(section => section.id === id);
     if (sectionToCopy) {
       const copiedSection = {
@@ -120,17 +149,24 @@ const AllegroDescriptionEditor = () => {
   const handleImageUpload = (sectionId, imageField, event) => {
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        updateSection(sectionId, imageField, e.target.result);
-      };
-      reader.readAsDataURL(file);
+      const imageName = file.name;
+      updateSection(sectionId, imageField, imageName);
     }
   };
 
   const formatText = (sectionId, command, value = null) => {
     document.execCommand(command, false, value);
-    // Aktualizuj treść po formatowaniu
+    const editor = document.getElementById(`editor-${sectionId}`);
+    if (editor) {
+      updateSection(sectionId, 'text', editor.innerHTML);
+    }
+  };
+
+  // Funkcja do wklejania czystego tekstu
+  const handlePaste = (e, sectionId) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    document.execCommand('insertText', false, text);
     const editor = document.getElementById(`editor-${sectionId}`);
     if (editor) {
       updateSection(sectionId, 'text', editor.innerHTML);
@@ -139,6 +175,11 @@ const AllegroDescriptionEditor = () => {
 
   const handleTextChange = (sectionId, content) => {
     updateSection(sectionId, 'text', content);
+  };
+
+  const generateImagePath = (imageName) => {
+    if (!productBrand || !productCode || !imageName) return imageName;
+    return `/data/include/cms/sportpoland_com/pliki-opisy/${productBrand}/${productCode}/${imageName}`;
   };
 
   const generateHTML = () => {
@@ -157,7 +198,7 @@ const AllegroDescriptionEditor = () => {
         case 'image-left':
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
-              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
               <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
@@ -171,24 +212,24 @@ const AllegroDescriptionEditor = () => {
               <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
-              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
           </div>\n`;
           break;
           
         case 'image-only':
           html += `<div style="text-align: center; ${containerStyle}">
-            ${section.image1 ? `<img src="${section.image1}" style="max-width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+            ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="max-width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
           </div>\n`;
           break;
           
         case 'two-images':
           html += `<div style="display: table; width: 100%; ${containerStyle}">
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 5px; text-align: center;">
-              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
             <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 5px; text-align: center;">
-              ${section.image2 ? `<img src="${section.image2}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+              ${section.image2 ? `<img src="${generateImagePath(section.image2)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
           </div>\n`;
           break;
@@ -244,12 +285,83 @@ const AllegroDescriptionEditor = () => {
         <div style={{ backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' }}>
           
           <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: '0 0 4px 0' }}>
-              Edytor Opisów Produktów
-            </h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
+                Edytor Opisów Produktów
+              </h1>
+              {currentStep > 0 && (
+                <button
+                  onClick={goBack}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 16px',
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                >
+                  ⬅️ Cofnij
+                </button>
+              )}
+            </div>
             <p style={{ color: '#6b7280', margin: 0 }}>
               Stwórz profesjonalny opis produktu w stylu Allegro
             </p>
+          </div>
+
+          {/* Sekcja konfiguracji produktu */}
+          <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>Konfiguracja produktu:</h3>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1', minWidth: '200px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '4px', color: '#374151' }}>
+                  Marka produktu:
+                </label>
+                <input
+                  type="text"
+                  value={productBrand}
+                  onChange={(e) => setProductBrand(e.target.value)}
+                  placeholder="np. Matrix"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+              <div style={{ flex: '1', minWidth: '200px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', marginBottom: '4px', color: '#374151' }}>
+                  Kod produktu:
+                </label>
+                <input
+                  type="text"
+                  value={productCode}
+                  onChange={(e) => setProductCode(e.target.value)}
+                  placeholder="np. 08485"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            </div>
+            {productBrand && productCode && (
+              <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#f0f9ff', borderRadius: '4px', fontSize: '12px', color: '#0369a1' }}>
+                Ścieżka do zdjęć: /data/include/cms/sportpoland_com/pliki-opisy/{productBrand}/{productCode}/[nazwa-zdjęcia]
+              </div>
+            )}
           </div>
 
           <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px' }}>
@@ -535,22 +647,40 @@ const AllegroDescriptionEditor = () => {
 
                     <div style={{ backgroundColor: section.backgroundColor, padding: '16px', borderRadius: '0 0 15px 15px' }}>
                       {section.type === 'text-only' && (
-                        <div
-                          id={`editor-${section.id}`}
-                          contentEditable
-                          dangerouslySetInnerHTML={{ __html: section.text }}
-                          onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
-                          style={{
-                            minHeight: '120px',
-                            padding: '8px',
-                            border: '1px solid #d1d5db',
-                            borderRadius: '6px',
-                            fontSize: `${section.textFormatting.fontSize}px`,
-                            textAlign: section.textFormatting.textAlign,
-                            outline: 'none',
-                            backgroundColor: 'white'
-                          }}
-                        />
+                        <div style={{ position: 'relative' }}>
+                          <div
+                            id={`editor-${section.id}`}
+                            contentEditable
+                            onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
+                            onPaste={(e) => handlePaste(e, section.id)}
+                            style={{
+                              minHeight: '120px',
+                              padding: '8px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '6px',
+                              fontSize: `${section.textFormatting.fontSize}px`,
+                              textAlign: section.textFormatting.textAlign,
+                              outline: 'none',
+                              backgroundColor: 'white'
+                            }}
+                            dangerouslySetInnerHTML={{ __html: section.text }}
+                          />
+                          {!section.text && (
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: '8px',
+                                left: '8px',
+                                color: '#9ca3af',
+                                pointerEvents: 'none',
+                                fontSize: `${section.textFormatting.fontSize}px`,
+                                padding: '8px'
+                              }}
+                            >
+                              Wprowadź tekst...
+                            </div>
+                          )}
+                        </div>
                       )}
                       
                       {section.type === 'image-left' && (
@@ -567,17 +697,14 @@ const AllegroDescriptionEditor = () => {
                               justifyContent: 'center'
                             }}>
                               {section.image1 ? (
-                                <img 
-                                  src={section.image1} 
-                                  alt="" 
-                                  style={{ 
-                                    width: '100%', 
-                                    height: 'auto', 
-                                    maxHeight: '200px', 
-                                    objectFit: 'contain',
-                                    borderRadius: '10px'
-                                  }} 
-                                />
+                                <div>
+                                  <div style={{ fontSize: '14px', color: '#374151', marginBottom: '8px' }}>
+                                    Nazwa pliku: {section.image1}
+                                  </div>
+                                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                    Ścieżka: {generateImagePath(section.image1)}
+                                  </div>
+                                </div>
                               ) : (
                                 <div>
                                   <div style={{ fontSize: '48px', marginBottom: '8px' }}>🖼️</div>
@@ -611,22 +738,40 @@ const AllegroDescriptionEditor = () => {
                             </div>
                           </div>
                           <div style={{ width: '50%' }}>
-                            <div
-                              id={`editor-${section.id}`}
-                              contentEditable
-                              dangerouslySetInnerHTML={{ __html: section.text }}
-                              onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
-                              style={{
-                                minHeight: '150px',
-                                padding: '8px',
-                                border: '1px solid #d1d5db',
-                                borderRadius: '6px',
-                                fontSize: `${section.textFormatting.fontSize}px`,
-                                textAlign: section.textFormatting.textAlign,
-                                outline: 'none',
-                                backgroundColor: 'white'
-                              }}
-                            />
+                            <div style={{ position: 'relative' }}>
+                              <div
+                                id={`editor-${section.id}`}
+                                contentEditable
+                                onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
+                                onPaste={(e) => handlePaste(e, section.id)}
+                                style={{
+                                  minHeight: '150px',
+                                  padding: '8px',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  fontSize: `${section.textFormatting.fontSize}px`,
+                                  textAlign: section.textFormatting.textAlign,
+                                  outline: 'none',
+                                  backgroundColor: 'white'
+                                }}
+                                dangerouslySetInnerHTML={{ __html: section.text }}
+                              />
+                              {!section.text && (
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    top: '8px',
+                                    left: '8px',
+                                    color: '#9ca3af',
+                                    pointerEvents: 'none',
+                                    fontSize: `${section.textFormatting.fontSize}px`,
+                                    padding: '8px'
+                                  }}
+                                >
+                                  Wprowadź tekst...
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -634,22 +779,40 @@ const AllegroDescriptionEditor = () => {
                       {section.type === 'image-right' && (
                         <div style={{ display: 'flex', gap: '16px' }}>
                           <div style={{ width: '50%' }}>
-                            <div
-                              id={`editor-${section.id}`}
-                              contentEditable
-                              dangerouslySetInnerHTML={{ __html: section.text }}
-                              onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
-                              style={{
-                                minHeight: '150px',
-                                padding: '8px',
-                                border: '1px solid #d1d5db',
-                                borderRadius: '6px',
-                                fontSize: `${section.textFormatting.fontSize}px`,
-                                textAlign: section.textFormatting.textAlign,
-                                outline: 'none',
-                                backgroundColor: 'white'
-                              }}
-                            />
+                            <div style={{ position: 'relative' }}>
+                              <div
+                                id={`editor-${section.id}`}
+                                contentEditable
+                                onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
+                                onPaste={(e) => handlePaste(e, section.id)}
+                                style={{
+                                  minHeight: '150px',
+                                  padding: '8px',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '6px',
+                                  fontSize: `${section.textFormatting.fontSize}px`,
+                                  textAlign: section.textFormatting.textAlign,
+                                  outline: 'none',
+                                  backgroundColor: 'white'
+                                }}
+                                dangerouslySetInnerHTML={{ __html: section.text }}
+                              />
+                              {!section.text && (
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    top: '8px',
+                                    left: '8px',
+                                    color: '#9ca3af',
+                                    pointerEvents: 'none',
+                                    fontSize: `${section.textFormatting.fontSize}px`,
+                                    padding: '8px'
+                                  }}
+                                >
+                                  Wprowadź tekst...
+                                </div>
+                              )}
+                            </div>
                           </div>
                           <div style={{ width: '50%' }}>
                             <div style={{ 
@@ -663,17 +826,14 @@ const AllegroDescriptionEditor = () => {
                               justifyContent: 'center'
                             }}>
                               {section.image1 ? (
-                                <img 
-                                  src={section.image1} 
-                                  alt="" 
-                                  style={{ 
-                                    width: '100%', 
-                                    height: 'auto', 
-                                    maxHeight: '200px', 
-                                    objectFit: 'contain',
-                                    borderRadius: '10px'
-                                  }} 
-                                />
+                                <div>
+                                  <div style={{ fontSize: '14px', color: '#374151', marginBottom: '8px' }}>
+                                    Nazwa pliku: {section.image1}
+                                  </div>
+                                  <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                    Ścieżka: {generateImagePath(section.image1)}
+                                  </div>
+                                </div>
                               ) : (
                                 <div>
                                   <div style={{ fontSize: '48px', marginBottom: '8px' }}>🖼️</div>
@@ -721,17 +881,14 @@ const AllegroDescriptionEditor = () => {
                           justifyContent: 'center'
                         }}>
                           {section.image1 ? (
-                            <img 
-                              src={section.image1} 
-                              alt="" 
-                              style={{ 
-                                width: '100%', 
-                                height: 'auto', 
-                                maxHeight: '300px', 
-                                objectFit: 'contain',
-                                borderRadius: '10px'
-                              }} 
-                            />
+                            <div>
+                              <div style={{ fontSize: '16px', color: '#374151', marginBottom: '8px' }}>
+                                Nazwa pliku: {section.image1}
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                Ścieżka: {generateImagePath(section.image1)}
+                              </div>
+                            </div>
                           ) : (
                             <div>
                               <div style={{ fontSize: '64px', marginBottom: '8px' }}>📸</div>
@@ -779,17 +936,14 @@ const AllegroDescriptionEditor = () => {
                               justifyContent: 'center'
                             }}>
                               {section.image1 ? (
-                                <img 
-                                  src={section.image1} 
-                                  alt="" 
-                                  style={{ 
-                                    width: '100%', 
-                                    height: 'auto', 
-                                    maxHeight: '150px', 
-                                    objectFit: 'contain',
-                                    borderRadius: '10px'
-                                  }} 
-                                />
+                                <div>
+                                  <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                                    {section.image1}
+                                  </div>
+                                  <div style={{ fontSize: '10px', color: '#6b7280' }}>
+                                    {generateImagePath(section.image1)}
+                                  </div>
+                                </div>
                               ) : (
                                 <div>
                                   <div style={{ fontSize: '32px', marginBottom: '4px' }}>🖼️</div>
@@ -834,17 +988,14 @@ const AllegroDescriptionEditor = () => {
                               justifyContent: 'center'
                             }}>
                               {section.image2 ? (
-                                <img 
-                                  src={section.image2} 
-                                  alt="" 
-                                  style={{ 
-                                    width: '100%', 
-                                    height: 'auto', 
-                                    maxHeight: '150px', 
-                                    objectFit: 'contain',
-                                    borderRadius: '10px'
-                                  }} 
-                                />
+                                <div>
+                                  <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                                    {section.image2}
+                                  </div>
+                                  <div style={{ fontSize: '10px', color: '#6b7280' }}>
+                                    {generateImagePath(section.image2)}
+                                  </div>
+                                </div>
                               ) : (
                                 <div>
                                   <div style={{ fontSize: '32px', marginBottom: '4px' }}>🖼️</div>
