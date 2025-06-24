@@ -1,0 +1,673 @@
+import React, { useState, useRef } from 'react';
+import { Trash2, Copy, ChevronUp, ChevronDown, Plus, Image, Type, Download, Eye } from 'lucide-react';
+import './App.css';
+
+const AllegroDescriptionEditor = () => {
+  const [sections, setSections] = useState([]);
+  const [showPreview, setShowPreview] = useState(false);
+  const fileInputRefs = useRef({});
+
+  const sectionTypes = [
+    { id: 'text-only', name: 'Sam opis', icon: Type },
+    { id: 'image-left', name: 'Zdjęcie po lewej, tekst po prawej', icon: Image },
+    { id: 'image-right', name: 'Zdjęcie po prawej, tekst po lewej', icon: Image },
+    { id: 'image-only', name: 'Samo zdjęcie', icon: Image },
+    { id: 'two-images', name: 'Dwa zdjęcia obok siebie', icon: Image },
+    { id: 'icons-grid', name: 'Siatka ikon z opisami', icon: Plus }
+  ];
+
+  const addSection = (type) => {
+    const newSection = {
+      id: Date.now(),
+      type,
+      text: '',
+      image1: '',
+      image2: '',
+      icons: type === 'icons-grid' ? [] : undefined,
+      textFormatting: {
+        bold: false,
+        italic: false,
+        underline: false,
+        fontSize: '14',
+        textAlign: 'left',
+        headingLevel: 'p'
+      },
+      backgroundColor: '#ffffff'
+    };
+    setSections([...sections, newSection]);
+  };
+
+  const deleteSection = (id) => {
+    setSections(sections.filter(section => section.id !== id));
+  };
+
+  const copySection = (id) => {
+    const sectionToCopy = sections.find(section => section.id === id);
+    const copiedSection = {
+      ...sectionToCopy,
+      id: Date.now()
+    };
+    const index = sections.findIndex(section => section.id === id);
+    const newSections = [...sections];
+    newSections.splice(index + 1, 0, copiedSection);
+    setSections(newSections);
+  };
+
+  const moveSection = (id, direction) => {
+    const index = sections.findIndex(section => section.id === id);
+    if ((direction === 'up' && index === 0) || (direction === 'down' && index === sections.length - 1)) {
+      return;
+    }
+    
+    const newSections = [...sections];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
+    setSections(newSections);
+  };
+
+  const updateSection = (id, field, value) => {
+    setSections(sections.map(section => 
+      section.id === id ? { ...section, [field]: value } : section
+    ));
+  };
+
+  const updateIcon = (sectionId, iconId, field, value) => {
+    setSections(sections.map(section => 
+      section.id === sectionId 
+        ? { 
+            ...section, 
+            icons: section.icons.map(icon => 
+              icon.id === iconId ? { ...icon, [field]: value } : icon
+            )
+          } 
+        : section
+    ));
+  };
+
+  const addIcon = (sectionId) => {
+    setSections(sections.map(section => 
+      section.id === sectionId 
+        ? { 
+            ...section, 
+            icons: [...(section.icons || []), { 
+              id: Date.now(), 
+              icon: '', 
+              title: '', 
+              description: '' 
+            }]
+          } 
+        : section
+    ));
+  };
+
+  const removeIcon = (sectionId, iconId) => {
+    setSections(sections.map(section => 
+      section.id === sectionId 
+        ? { 
+            ...section, 
+            icons: section.icons.filter(icon => icon.id !== iconId)
+          } 
+        : section
+    ));
+  };
+
+  const updateTextFormatting = (id, property, value) => {
+    setSections(sections.map(section => 
+      section.id === id 
+        ? { 
+            ...section, 
+            textFormatting: { ...section.textFormatting, [property]: value }
+          } 
+        : section
+    ));
+  };
+
+  const handleImageUpload = (sectionId, imageField, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        updateSection(sectionId, imageField, e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const generateHTML = () => {
+    let html = '';
+    
+    sections.forEach(section => {
+      const textStyle = `font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign}; ${section.textFormatting.bold ? 'font-weight: bold;' : ''} ${section.textFormatting.italic ? 'font-style: italic;' : ''} ${section.textFormatting.underline ? 'text-decoration: underline;' : ''}`;
+      const containerStyle = `background-color: ${section.backgroundColor}; margin-bottom: 20px; padding: 10px;`;
+      
+      const generateTextElement = (text, style) => {
+        const tag = section.textFormatting.headingLevel;
+        return `<${tag} style="${style}">${text}</${tag}>`;
+      };
+      
+      switch (section.type) {
+        case 'text-only':
+          html += `<div style="${containerStyle}">
+            ${generateTextElement(section.text, textStyle)}
+          </div>\n`;
+          break;
+          
+        case 'image-left':
+          html += `<div style="display: table; width: 100%; ${containerStyle}">
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto;" alt="">` : ''}
+            </div>
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
+              ${generateTextElement(section.text, textStyle)}
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'image-right':
+          html += `<div style="display: table; width: 100%; ${containerStyle}">
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+              ${generateTextElement(section.text, textStyle)}
+            </div>
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
+              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto;" alt="">` : ''}
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'image-only':
+          html += `<div style="text-align: center; ${containerStyle}">
+            ${section.image1 ? `<img src="${section.image1}" style="max-width: 100%; height: auto;" alt="">` : ''}
+          </div>\n`;
+          break;
+          
+        case 'two-images':
+          html += `<div style="display: table; width: 100%; ${containerStyle}">
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 5px; text-align: center;">
+              ${section.image1 ? `<img src="${section.image1}" style="width: 100%; height: auto;" alt="">` : ''}
+            </div>
+            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 5px; text-align: center;">
+              ${section.image2 ? `<img src="${section.image2}" style="width: 100%; height: auto;" alt="">` : ''}
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'icons-grid':
+          const iconsPerRow = Math.ceil(Math.sqrt((section.icons || []).length));
+          const iconWidth = `${100 / iconsPerRow}%`;
+          html += `<div style="${containerStyle}">
+            <div style="display: table; width: 100%;">`;
+          
+          (section.icons || []).forEach((icon, index) => {
+            if (index % iconsPerRow === 0) {
+              html += `<div style="display: table-row;">`;
+            }
+            html += `<div style="display: table-cell; width: ${iconWidth}; vertical-align: top; text-align: center; padding: 10px;">
+              ${icon.icon ? `<img src="${icon.icon}" style="width: 64px; height: 64px; margin-bottom: 10px;" alt="${icon.title}">` : ''}
+              ${icon.title ? `<h4 style="margin: 5px 0; font-size: 16px; font-weight: bold;">${icon.title}</h4>` : ''}
+              ${icon.description ? `<p style="margin: 0; font-size: 14px; color: #666;">${icon.description}</p>` : ''}
+            </div>`;
+            if (index % iconsPerRow === iconsPerRow - 1 || index === (section.icons || []).length - 1) {
+              html += `</div>`;
+            }
+          });
+          
+          html += `</div></div>\n`;
+          break;
+        default:
+          break;
+      }
+    });
+    
+    return html;
+  };
+
+  const copyToClipboard = () => {
+    const html = generateHTML();
+    navigator.clipboard.writeText(html).then(() => {
+      alert('HTML skopiowany do schowka!');
+    });
+  };
+
+  const downloadHTML = () => {
+    const html = generateHTML();
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'opis-produktu.html';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const renderSectionContent = (section) => {
+    const textStyle = {
+      fontSize: `${section.textFormatting.fontSize}px`,
+      textAlign: section.textFormatting.textAlign,
+      fontWeight: section.textFormatting.bold ? 'bold' : 'normal',
+      fontStyle: section.textFormatting.italic ? 'italic' : 'normal',
+      textDecoration: section.textFormatting.underline ? 'underline' : 'none'
+    };
+
+    switch (section.type) {
+      case 'text-only':
+        return (
+          <div className="p-4">
+            <textarea
+              value={section.text}
+              onChange={(e) => updateSection(section.id, 'text', e.target.value)}
+              placeholder="Wprowadź tekst..."
+              className="w-full h-32 p-2 border border-gray-300 rounded resize-none"
+              style={textStyle}
+            />
+          </div>
+        );
+        
+      case 'image-left':
+        return (
+          <div className="p-4">
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center">
+                  {section.image1 ? (
+                    <img src={section.image1} alt="" className="w-full h-auto max-h-48 object-contain mx-auto" />
+                  ) : (
+                    <div>
+                      <Image className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-500">Kliknij aby dodać zdjęcie</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(section.id, 'image1', e)}
+                    className="hidden"
+                    ref={(el) => fileInputRefs.current[`${section.id}-image1`] = el}
+                  />
+                  <button
+                    onClick={() => fileInputRefs.current[`${section.id}-image1`]?.click()}
+                    className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm"
+                  >
+                    Wybierz zdjęcie
+                  </button>
+                </div>
+              </div>
+              <div className="w-1/2">
+                <textarea
+                  value={section.text}
+                  onChange={(e) => updateSection(section.id, 'text', e.target.value)}
+                  placeholder="Wprowadź tekst..."
+                  className="w-full h-32 p-2 border border-gray-300 rounded resize-none"
+                  style={textStyle}
+                />
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'image-right':
+        return (
+          <div className="p-4">
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <textarea
+                  value={section.text}
+                  onChange={(e) => updateSection(section.id, 'text', e.target.value)}
+                  placeholder="Wprowadź tekst..."
+                  className="w-full h-32 p-2 border border-gray-300 rounded resize-none"
+                  style={textStyle}
+                />
+              </div>
+              <div className="w-1/2">
+                <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center">
+                  {section.image1 ? (
+                    <img src={section.image1} alt="" className="w-full h-auto max-h-48 object-contain mx-auto" />
+                  ) : (
+                    <div>
+                      <Image className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-500">Kliknij aby dodać zdjęcie</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(section.id, 'image1', e)}
+                    className="hidden"
+                    ref={(el) => fileInputRefs.current[`${section.id}-image1`] = el}
+                  />
+                  <button
+                    onClick={() => fileInputRefs.current[`${section.id}-image1`]?.click()}
+                    className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm"
+                  >
+                    Wybierz zdjęcie
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'image-only':
+        return (
+          <div className="p-4">
+            <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center">
+              {section.image1 ? (
+                <img src={section.image1} alt="" className="w-full h-auto max-h-64 object-contain mx-auto" />
+              ) : (
+                <div>
+                  <Image className="w-16 h-16 mx-auto text-gray-400 mb-2" />
+                  <p className="text-gray-500">Kliknij aby dodać zdjęcie</p>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(section.id, 'image1', e)}
+                className="hidden"
+                ref={(el) => fileInputRefs.current[`${section.id}-image1`] = el}
+              />
+              <button
+                onClick={() => fileInputRefs.current[`${section.id}-image1`]?.click()}
+                className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm"
+              >
+                Wybierz zdjęcie
+              </button>
+            </div>
+          </div>
+        );
+        
+      case 'two-images':
+        return (
+          <div className="p-4">
+            <div className="flex gap-4">
+              <div className="w-1/2">
+                <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center">
+                  {section.image1 ? (
+                    <img src={section.image1} alt="" className="w-full h-auto max-h-48 object-contain mx-auto" />
+                  ) : (
+                    <div>
+                      <Image className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-500">Zdjęcie 1</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(section.id, 'image1', e)}
+                    className="hidden"
+                    ref={(el) => fileInputRefs.current[`${section.id}-image1`] = el}
+                  />
+                  <button
+                    onClick={() => fileInputRefs.current[`${section.id}-image1`]?.click()}
+                    className="mt-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                  >
+                    Wybierz
+                  </button>
+                </div>
+              </div>
+              <div className="w-1/2">
+                <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center">
+                  {section.image2 ? (
+                    <img src={section.image2} alt="" className="w-full h-auto max-h-48 object-contain mx-auto" />
+                  ) : (
+                    <div>
+                      <Image className="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-500">Zdjęcie 2</p>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(section.id, 'image2', e)}
+                    className="hidden"
+                    ref={(el) => fileInputRefs.current[`${section.id}-image2`] = el}
+                  />
+                  <button
+                    onClick={() => fileInputRefs.current[`${section.id}-image2`]?.click()}
+                    className="mt-2 px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                  >
+                    Wybierz
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'icons-grid':
+        return (
+          <div className="p-4">
+            <div className="mb-4">
+              <button
+                onClick={() => addIcon(section.id)}
+                className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+              >
+                <Plus className="w-4 h-4 inline mr-1" />
+                Dodaj ikonę
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {(section.icons || []).map((icon) => (
+                <div key={icon.id} className="border border-gray-200 rounded p-3">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-600">Ikona {icon.id}</span>
+                    <button
+                      onClick={() => removeIcon(section.id, icon.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-center">
+                      {icon.icon ? (
+                        <img src={icon.icon} alt="" className="w-16 h-16 mx-auto object-contain" />
+                      ) : (
+                        <div className="w-16 h-16 mx-auto border-2 border-dashed border-gray-300 rounded flex items-center justify-center">
+                          <Image className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                              updateIcon(section.id, icon.id, 'icon', e.target.result);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="hidden"
+                        ref={(el) => fileInputRefs.current[`${section.id}-icon-${icon.id}`] = el}
+                      />
+                      <button
+                        onClick={() => fileInputRefs.current[`${section.id}-icon-${icon.id}`]?.click()}
+                        className="mt-1 px-2 py-1 bg-blue-500 text-white rounded text-xs"
+                      >
+                        Wybierz
+                      </button>
+                    </div>
+                    
+                    <input
+                      type="text"
+                      placeholder="Tytuł ikony"
+                      value={icon.title}
+                      onChange={(e) => updateIcon(section.id, icon.id, 'title', e.target.value)}
+                      className="w-full px-2 py-1 border rounded text-sm"
+                    />
+                    
+                    <textarea
+                      placeholder="Opis ikony"
+                      value={icon.description}
+                      onChange={(e) => updateIcon(section.id, icon.id, 'description', e.target.value)}
+                      className="w-full px-2 py-1 border rounded text-sm h-16 resize-none"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto p-4">
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="border-b p-4">
+            <h1 className="text-2xl font-bold text-gray-800">Edytor Opisów Produktów</h1>
+            <p className="text-gray-600 mt-1">Stwórz profesjonalny opis produktu w stylu Allegro</p>
+          </div>
+
+          <div className="border-b p-4">
+            <h3 className="text-lg font-semibold mb-3">Dodaj sekcję:</h3>
+            <div className="flex flex-wrap gap-2">
+              {sectionTypes.map(type => {
+                const IconComponent = type.icon;
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => addSection(type.id)}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+                  >
+                    <IconComponent className="w-4 h-4" />
+                    {type.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="p-4">
+            {sections.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Type className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg">Dodaj pierwszą sekcję aby rozpocząć tworzenie opisu</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {sections.map((section, index) => (
+                  <div key={section.id} className="border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between bg-gray-50 px-4 py-2 border-b">
+                      <span className="text-sm font-medium text-gray-700">
+                        {sectionTypes.find(t => t.id === section.type)?.name}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => moveSection(section.id, 'up')}
+                          disabled={index === 0}
+                          className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => moveSection(section.id, 'down')}
+                          disabled={index === sections.length - 1}
+                          className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => copySection(section.id)}
+                          className="p-1 text-gray-500 hover:text-gray-700"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteSection(section.id)}
+                          className="p-1 text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 px-4 py-2 border-b">
+                      <div className="flex items-center justify-between">
+                        {['text-only', 'image-left', 'image-right'].includes(section.type) && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <select
+                              value={section.textFormatting.headingLevel}
+                              onChange={(e) => updateTextFormatting(section.id, 'headingLevel', e.target.value)}
+                              className="px-2 py-1 border rounded"
+                            >
+                              <option value="p">Paragraf</option>
+                              <option value="h1">H1</option>
+                              <option value="h2">H2</option>
+                              <option value="h3">H3</option>
+                              <option value="h4">H4</option>
+                            </select>
+                            <button
+                              onClick={() => updateTextFormatting(section.id, 'bold', !section.textFormatting.bold)}
+                              className={`px-2 py-1 rounded ${section.textFormatting.bold ? 'bg-blue-500 text-white' : 'bg-white border'}`}
+                            >
+                              <strong>B</strong>
+                            </button>
+                            <button
+                              onClick={() => updateTextFormatting(section.id, 'italic', !section.textFormatting.italic)}
+                              className={`px-2 py-1 rounded ${section.textFormatting.italic ? 'bg-blue-500 text-white' : 'bg-white border'}`}
+                            >
+                              <em>I</em>
+                            </button>
+                            <button
+                              onClick={() => updateTextFormatting(section.id, 'underline', !section.textFormatting.underline)}
+                              className={`px-2 py-1 rounded ${section.textFormatting.underline ? 'bg-blue-500 text-white' : 'bg-white border'}`}
+                            >
+                              <u>U</u>
+                            </button>
+                            <select
+                              value={section.textFormatting.fontSize}
+                              onChange={(e) => updateTextFormatting(section.id, 'fontSize', e.target.value)}
+                              className="px-2 py-1 border rounded"
+                            >
+                              <option value="12">12px</option>
+                              <option value="14">14px</option>
+                              <option value="16">16px</option>
+                              <option value="18">18px</option>
+                              <option value="20">20px</option>
+                              <option value="24">24px</option>
+                            </select>
+                            <select
+                              value={section.textFormatting.textAlign}
+                              onChange={(e) => updateTextFormatting(section.id, 'textAlign', e.target.value)}
+                              className="px-2 py-1 border rounded"
+                            >
+                              <option value="left">Do lewej</option>
+                              <option value="center">Na środek</option>
+                              <option value="right">Do prawej</option>
+                              <option value="justify">Wyjustuj</option>
+                            </select>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center gap-2 text-sm">
+                          <label className="text-gray-600">Kolor tła:</label>
+                          <input
+                            type="color"
+                            value={section.backgroundColor}
+                            onChange={(e) => updateSection(section.id, 'backgroundColor', e.target.value)}
+                            className="w-8 h-8 border rounded cursor-pointer"
+                          />
+                          <button
+                            onClick={() => updateSection(section.id, 'backgroundColor', '#ffffff')}
+                            className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+                          >
+                            Reset
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ backgroundColor: section.backgroundColor }}>
+                      {renderSectionContent(section)}
+                    </div>
+                  </div>
+                ))}
+              </div
