@@ -271,14 +271,14 @@ const AllegroDescriptionEditor = () => {
   };
 
   const clearAllSections = () => {
-    if (confirm('Czy na pewno chcesz usunąć wszystkie sekcje?\n\nTa operacja jest nieodwracalna.')) {
+    if (window.confirm('Czy na pewno chcesz usunąć wszystkie sekcje?\n\nTa operacja jest nieodwracalna.')) {
       setSections([]);
       alert('Wszystkie sekcje zostały usunięte!');
     }
   };
 
   const saveTemplate = () => {
-    const templateName = prompt('Podaj nazwę szablonu:');
+    const templateName = window.prompt('Podaj nazwę szablonu:');
     if (templateName && templateName.trim()) {
       const template = {
         id: Date.now(),
@@ -295,7 +295,7 @@ const AllegroDescriptionEditor = () => {
   };
 
   const loadTemplate = (template) => {
-    if (confirm(`Czy na pewno chcesz wczytać szablon "${template.name}"?\n\nTo zastąpi obecną zawartość.`)) {
+    if (window.confirm(`Czy na pewno chcesz wczytać szablon "${template.name}"?\n\nTo zastąpi obecną zawartość.`)) {
       setSections(template.sections);
       setProductBrand(template.productBrand || '');
       setProductCode(template.productCode || '');
@@ -305,14 +305,14 @@ const AllegroDescriptionEditor = () => {
   };
 
   const deleteTemplate = (templateId, templateName) => {
-    if (confirm(`Czy na pewno chcesz usunąć szablon "${templateName}"?`)) {
+    if (window.confirm(`Czy na pewno chcesz usunąć szablon "${templateName}"?`)) {
       setTemplates(prev => prev.filter(t => t.id !== templateId));
       alert(`Szablon "${templateName}" został usunięty!`);
     }
   };
 
   const duplicateTemplate = (template) => {
-    const newName = prompt('Podaj nazwę dla kopii szablonu:', `${template.name} - kopia`);
+    const newName = window.prompt('Podaj nazwę dla kopii szablonu:', `${template.name} - kopia`);
     if (newName && newName.trim()) {
       const newTemplate = {
         ...template,
