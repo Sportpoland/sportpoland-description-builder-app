@@ -7,7 +7,16 @@ const AllegroDescriptionEditor = () => {
   const [productCode, setProductCode] = useState('');
   const [history, setHistory] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
-  const [templates, setTemplates] = useState([]); // Nowy state dla szablonów
+  const [templates, setTemplates] = useState(() => {
+    // Wczytaj szablony z localStorage przy starcie
+    try {
+      const savedTemplates = localStorage.getItem('allegro-editor-templates');
+      return savedTemplates ? JSON.parse(savedTemplates) : [];
+    } catch (error) {
+      console.error('Błąd wczytywania szablonów:', error);
+      return [];
+    }
+  }); // Nowy state dla szablonów
   const [templateName, setTemplateName] = useState(''); // Nazwa szablonu do zapisania
   const [showTemplates, setShowTemplates] = useState(false); // Pokazywanie sekcji szablonów
   const fileInputRefs = useRef({});
@@ -44,6 +53,15 @@ const AllegroDescriptionEditor = () => {
   };
 
   // Funkcje szablonów
+  const saveTemplateToStorage = (updatedTemplates) => {
+    try {
+      localStorage.setItem('allegro-editor-templates', JSON.stringify(updatedTemplates));
+    } catch (error) {
+      console.error('Błąd zapisywania szablonów:', error);
+      alert('Błąd zapisywania szablonu do przeglądarki!');
+    }
+  };
+
   const saveTemplate = () => {
     if (!templateName.trim()) {
       alert('Podaj nazwę szablonu!');
@@ -59,7 +77,9 @@ const AllegroDescriptionEditor = () => {
       createdAt: new Date().toLocaleString()
     };
     
-    setTemplates([...templates, template]);
+    const updatedTemplates = [...templates, template];
+    setTemplates(updatedTemplates);
+    saveTemplateToStorage(updatedTemplates);
     setTemplateName('');
     alert('Szablon został zapisany!');
   };
@@ -74,8 +94,61 @@ const AllegroDescriptionEditor = () => {
 
   const deleteTemplate = (templateId) => {
     if (window.confirm('Czy na pewno chcesz usunąć ten szablon?')) {
-      setTemplates(templates.filter(t => t.id !== templateId));
+      const updatedTemplates = templates.filter(t => t.id !== templateId);
+      setTemplates(updatedTemplates);
+      saveTemplateToStorage(updatedTemplates);
     }
+  };
+
+  const exportTemplates = () => {
+    try {
+      const dataStr = JSON.stringify(templates, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `allegro-templates-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Błąd eksportu:', error);
+      alert('Błąd eksportowania szablonów!');
+    }
+  };
+
+  const importTemplates = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedTemplates = JSON.parse(e.target.result);
+        if (!Array.isArray(importedTemplates)) {
+          throw new Error('Nieprawidłowy format pliku');
+        }
+
+        // Dodaj unique ID aby uniknąć konfliktów
+        const templatesWithNewIds = importedTemplates.map(template => ({
+          ...template,
+          id: Date.now() + Math.random(),
+          createdAt: `${template.createdAt} (importowany)`
+        }));
+
+        const updatedTemplates = [...templates, ...templatesWithNewIds];
+        setTemplates(updatedTemplates);
+        saveTemplateToStorage(updatedTemplates);
+        alert(`Zaimportowano ${templatesWithNewIds.length} szablonów!`);
+      } catch (error) {
+        console.error('Błąd importu:', error);
+        alert('Błąd importowania szablonów! Sprawdź czy plik jest prawidłowy.');
+      }
+    };
+    reader.readAsText(file);
+    // Wyczyść input aby można było wczytać ten sam plik ponownie
+    event.target.value = '';
   };
 
   const addSection = (type) => {
@@ -550,72 +623,227 @@ const AllegroDescriptionEditor = () => {
 
   // Funkcja do generowania finalnego HTML (dla eksportu z właściwymi ścieżkami)
   const generateHTML = () => {
-    let html = '';
+    let html = `<style>
+      /* Mobile-first responsive styles for Allegro */
+      .allegro-container {
+        background-color: var(--bg-color);
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 15px;
+      }
+      
+      .allegro-flex {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+      }
+      
+      .allegro-text {
+        font-size: var(--font-size);
+        text-align: var(--text-align);
+        line-height: 1.4;
+      }
+      
+      .allegro-image {
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+        max-width: 100%;
+      }
+      
+      .allegro-image-only {
+        width: 100%;
+        height: auto;
+        min-height: 200px;
+        max-height: 400px;
+        border-radius: 10px;
+        object-fit: contain;
+      }
+      
+      .allegro-icons-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+        text-align: center;
+      }
+      
+      .allegro-icon-item {
+        width: 100%;
+        max-width: 180px;
+        min-width: 150px;
+        text-align: center;
+        margin: 5px;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+      
+      .allegro-icon-image {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin: 0 auto 10px;
+        display: block;
+      }
+      
+      .allegro-icon-emoji {
+        font-size: 40px;
+        margin-bottom: 10px;
+        display: block;
+      }
+      
+      .allegro-icon-title {
+        margin: 5px 0;
+        font-weight: bold;
+        font-size: 14px;
+      }
+      
+      .allegro-icon-desc {
+        margin: 0;
+        font-size: 12px;
+        color: #666;
+        line-height: 1.3;
+      }
+      
+      /* Tablet breakpoint: 768px+ */
+      @media (min-width: 768px) {
+        .allegro-container {
+          padding: 20px;
+        }
+        
+        .allegro-flex {
+          flex-direction: row;
+          align-items: center;
+          gap: 20px;
+        }
+        
+        .allegro-flex.reverse {
+          flex-direction: row-reverse;
+        }
+        
+        .allegro-flex > div {
+          flex: 1;
+        }
+        
+        .allegro-image-only {
+          max-height: 500px;
+        }
+        
+        .allegro-icon-item {
+          width: auto;
+          min-width: 180px;
+          max-width: 200px;
+        }
+        
+        .allegro-icon-image {
+          width: 60px;
+          height: 60px;
+        }
+        
+        .allegro-icon-emoji {
+          font-size: 48px;
+        }
+        
+        .allegro-icon-title {
+          font-size: 16px;
+        }
+        
+        .allegro-icon-desc {
+          font-size: 14px;
+        }
+      }
+      
+      /* Desktop breakpoint: 1024px+ */
+      @media (min-width: 1024px) {
+        .allegro-container {
+          padding: 25px;
+        }
+        
+        .allegro-flex {
+          gap: 25px;
+        }
+        
+        .allegro-icon-item {
+          min-width: 200px;
+          max-width: 220px;
+        }
+      }
+    </style>`;
     
     sections.forEach(section => {
-      const containerStyle = `background-color: ${section.backgroundColor}; margin-bottom: 20px; padding: 20px; border-radius: 15px;`;
+      const cssVars = `--bg-color: ${section.backgroundColor}; --font-size: ${section.textFormatting.fontSize}px; --text-align: ${section.textFormatting.textAlign};`;
       
       switch (section.type) {
         case 'text-only':
-          html += `<div style="${containerStyle}">
-            <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
+          html += `<div class="allegro-container" style="${cssVars}">
+            <div class="allegro-text">${section.text}</div>
           </div>\n`;
           break;
           
         case 'image-left':
-          html += `<div style="display: table; width: 100%; ${containerStyle}">
-            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-right: 10px;">
-              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
-            </div>
-            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-left: 10px;">
-              <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
+          html += `<div class="allegro-container" style="${cssVars}">
+            <div class="allegro-flex">
+              <div>
+                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="allegro-image" alt="">` : ''}
+              </div>
+              <div>
+                <div class="allegro-text">${section.text}</div>
+              </div>
             </div>
           </div>\n`;
           break;
           
         case 'image-right':
-          html += `<div style="display: table; width: 100%; ${containerStyle}">
-            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-right: 10px;">
-              <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
-            </div>
-            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-left: 10px;">
-              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+          html += `<div class="allegro-container" style="${cssVars}">
+            <div class="allegro-flex reverse">
+              <div>
+                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="allegro-image" alt="">` : ''}
+              </div>
+              <div>
+                <div class="allegro-text">${section.text}</div>
+              </div>
             </div>
           </div>\n`;
           break;
           
         case 'image-only':
-          html += `<div style="text-align: center; ${containerStyle}">
-            ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="max-width: 100%; height: auto; min-height: 200px; max-height: 500px; border-radius: 10px;" alt="">` : ''}
+          html += `<div class="allegro-container" style="${cssVars}">
+            <div style="text-align: center;">
+              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="allegro-image-only" alt="">` : ''}
+            </div>
           </div>\n`;
           break;
           
         case 'two-images':
-          html += `<div style="display: table; width: 100%; ${containerStyle}">
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 5px; text-align: center;">
-              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
-            </div>
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 5px; text-align: center;">
-              ${section.image2 ? `<img src="${generateImagePath(section.image2)}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+          html += `<div class="allegro-container" style="${cssVars}">
+            <div class="allegro-flex">
+              <div style="text-align: center;">
+                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="allegro-image" alt="">` : ''}
+              </div>
+              <div style="text-align: center;">
+                ${section.image2 ? `<img src="${generateImagePath(section.image2)}" class="allegro-image" alt="">` : ''}
+              </div>
             </div>
           </div>\n`;
           break;
           
         case 'icons-grid':
           const iconsHtml = section.icons.map(icon => `
-            <div style="display: inline-block; width: 200px; text-align: center; margin: 10px; vertical-align: top;">
-              <div style="margin-bottom: 10px;">
-                ${icon.image 
-                  ? `<img src="${generateImagePath(icon.image)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" alt="${icon.title}">`
-                  : `<div style="font-size: 48px;">${icon.icon}</div>`
-                }
-              </div>
-              <h4 style="margin: 5px 0; font-weight: bold;">${icon.title}</h4>
-              <p style="margin: 0; font-size: 14px; color: #666;">${icon.description}</p>
+            <div class="allegro-icon-item">
+              ${icon.image 
+                ? `<img src="${generateImagePath(icon.image)}" class="allegro-icon-image" alt="${icon.title}">`
+                : `<div class="allegro-icon-emoji">${icon.icon}</div>`
+              }
+              <h4 class="allegro-icon-title">${icon.title}</h4>
+              <p class="allegro-icon-desc">${icon.description}</p>
             </div>
           `).join('');
-          html += `<div style="text-align: center; ${containerStyle}">
-            ${iconsHtml}
+          html += `<div class="allegro-container" style="${cssVars}">
+            <div class="allegro-icons-grid">
+              ${iconsHtml}
+            </div>
           </div>\n`;
           break;
           
