@@ -73,7 +73,7 @@ const AllegroDescriptionEditor = () => {
   };
 
   const deleteTemplate = (templateId) => {
-    if (confirm('Czy na pewno chcesz usunąć ten szablon?')) {
+    if (window.confirm('Czy na pewno chcesz usunąć ten szablon?')) {
       setTemplates(templates.filter(t => t.id !== templateId));
     }
   };
