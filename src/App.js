@@ -7,6 +7,9 @@ const AllegroDescriptionEditor = () => {
   const [productCode, setProductCode] = useState('');
   const [history, setHistory] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
+  const [templates, setTemplates] = useState([]); // Nowy state dla szablonów
+  const [templateName, setTemplateName] = useState(''); // Nazwa szablonu do zapisania
+  const [showTemplates, setShowTemplates] = useState(false); // Pokazywanie sekcji szablonów
   const fileInputRefs = useRef({});
 
   const sectionTypes = [
@@ -40,6 +43,41 @@ const AllegroDescriptionEditor = () => {
     }
   };
 
+  // Funkcje szablonów
+  const saveTemplate = () => {
+    if (!templateName.trim()) {
+      alert('Podaj nazwę szablonu!');
+      return;
+    }
+    
+    const template = {
+      id: Date.now(),
+      name: templateName,
+      sections: JSON.parse(JSON.stringify(sections)),
+      productBrand,
+      productCode,
+      createdAt: new Date().toLocaleString()
+    };
+    
+    setTemplates([...templates, template]);
+    setTemplateName('');
+    alert('Szablon został zapisany!');
+  };
+
+  const loadTemplate = (template) => {
+    saveToHistory();
+    setSections(template.sections);
+    setProductBrand(template.productBrand);
+    setProductCode(template.productCode);
+    alert(`Szablon "${template.name}" został wczytany!`);
+  };
+
+  const deleteTemplate = (templateId) => {
+    if (confirm('Czy na pewno chcesz usunąć ten szablon?')) {
+      setTemplates(templates.filter(t => t.id !== templateId));
+    }
+  };
+
   const addSection = (type) => {
     saveToHistory();
     const newSection = {
@@ -51,9 +89,9 @@ const AllegroDescriptionEditor = () => {
       imagePreview1: '', // Dla podglądu na żywo
       imagePreview2: '', // Dla podglądu na żywo
       icons: type === 'icons-grid' ? [
-        { id: 1, icon: '✓', title: 'Tytuł 1', description: 'Opis funkcji 1' },
-        { id: 2, icon: '⚡', title: 'Tytuł 2', description: 'Opis funkcji 2' },
-        { id: 3, icon: '🔒', title: 'Tytuł 3', description: 'Opis funkcji 3' }
+        { id: 1, icon: '✓', title: 'Tytuł 1', description: 'Opis funkcji 1', image: '', imagePreview: '' },
+        { id: 2, icon: '⚡', title: 'Tytuł 2', description: 'Opis funkcji 2', image: '', imagePreview: '' },
+        { id: 3, icon: '🔒', title: 'Tytuł 3', description: 'Opis funkcji 3', image: '', imagePreview: '' }
       ] : undefined,
       textFormatting: {
         fontSize: '14',
@@ -74,6 +112,14 @@ const AllegroDescriptionEditor = () => {
       }
       if (sectionToDelete.imagePreview2) {
         URL.revokeObjectURL(sectionToDelete.imagePreview2);
+      }
+      // Wyczyść blob URLs dla ikon
+      if (sectionToDelete.icons) {
+        sectionToDelete.icons.forEach(icon => {
+          if (icon.imagePreview) {
+            URL.revokeObjectURL(icon.imagePreview);
+          }
+        });
       }
     }
     setSections(sections.filter(section => section.id !== id));
@@ -102,7 +148,12 @@ const AllegroDescriptionEditor = () => {
         id: Date.now(),
         // Nie kopiujemy blob URLs - użytkownik będzie musiał ponownie dodać zdjęcia
         imagePreview1: '',
-        imagePreview2: ''
+        imagePreview2: '',
+        icons: sectionToCopy.icons ? sectionToCopy.icons.map(icon => ({
+          ...icon,
+          id: Date.now() + Math.random(),
+          imagePreview: ''
+        })) : undefined
       };
       setSections([...sections, copiedSection]);
     }
@@ -132,7 +183,9 @@ const AllegroDescriptionEditor = () => {
           id: Date.now(),
           icon: '📌',
           title: 'Nowy tytuł',
-          description: 'Nowy opis'
+          description: 'Nowy opis',
+          image: '',
+          imagePreview: ''
         };
         return { ...section, icons: [...section.icons, newIcon] };
       }
@@ -143,6 +196,10 @@ const AllegroDescriptionEditor = () => {
   const removeIconFromGrid = (sectionId, iconIndex) => {
     setSections(sections.map(section => {
       if (section.id === sectionId) {
+        const iconToRemove = section.icons[iconIndex];
+        if (iconToRemove && iconToRemove.imagePreview) {
+          URL.revokeObjectURL(iconToRemove.imagePreview);
+        }
         const newIcons = section.icons.filter((_, index) => index !== iconIndex);
         return { ...section, icons: newIcons };
       }
@@ -161,7 +218,7 @@ const AllegroDescriptionEditor = () => {
     ));
   };
 
-  const handleIconImageUpload = (sectionId, iconId, event) => {
+  const handleIconImageUpload = (sectionId, iconIndex, event) => {
     const file = event.target.files[0];
     if (file) {
       const imageName = file.name;
@@ -170,8 +227,8 @@ const AllegroDescriptionEditor = () => {
       setSections(prevSections => {
         return prevSections.map(section => {
           if (section.id === sectionId) {
-            const updatedIcons = section.icons.map(icon => 
-              icon.id === iconId 
+            const updatedIcons = section.icons.map((icon, index) => 
+              index === iconIndex 
                 ? { ...icon, image: imageName, imagePreview: imageURL }
                 : icon
             );
@@ -181,6 +238,26 @@ const AllegroDescriptionEditor = () => {
         });
       });
     }
+  };
+
+  const removeIconImage = (sectionId, iconIndex) => {
+    setSections(prevSections => {
+      return prevSections.map(section => {
+        if (section.id === sectionId) {
+          const updatedIcons = section.icons.map((icon, index) => {
+            if (index === iconIndex) {
+              if (icon.imagePreview) {
+                URL.revokeObjectURL(icon.imagePreview);
+              }
+              return { ...icon, image: '', imagePreview: '' };
+            }
+            return icon;
+          });
+          return { ...section, icons: updatedIcons };
+        }
+        return section;
+      });
+    });
   };
 
   const handleImageUpload = (sectionId, imageField, event) => {
@@ -294,8 +371,8 @@ const AllegroDescriptionEditor = () => {
           const iconsHtml = section.icons.map(icon => `
             <div style="display: inline-block; width: 200px; text-align: center; margin: 10px; vertical-align: top;">
               <div style="margin-bottom: 10px;">
-                ${icon.image 
-                  ? `<img src="${generateImagePath(icon.image)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" alt="${icon.title}">`
+                ${icon.imagePreview 
+                  ? `<img src="${icon.imagePreview}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" alt="${icon.title}">`
                   : `<div style="font-size: 48px;">${icon.icon}</div>`
                 }
               </div>
@@ -372,7 +449,12 @@ const AllegroDescriptionEditor = () => {
         case 'icons-grid':
           const iconsHtml = section.icons.map(icon => `
             <div style="display: inline-block; width: 200px; text-align: center; margin: 10px; vertical-align: top;">
-              <div style="font-size: 48px; margin-bottom: 10px;">${icon.icon}</div>
+              <div style="margin-bottom: 10px;">
+                ${icon.image 
+                  ? `<img src="${generateImagePath(icon.image)}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" alt="${icon.title}">`
+                  : `<div style="font-size: 48px;">${icon.icon}</div>`
+                }
+              </div>
               <h4 style="margin: 5px 0; font-weight: bold;">${icon.title}</h4>
               <p style="margin: 0; font-size: 14px; color: #666;">${icon.description}</p>
             </div>
@@ -424,15 +506,15 @@ const AllegroDescriptionEditor = () => {
               <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
                 Edytor Opisów Produktów
               </h1>
-              {currentStep > 0 && (
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
-                  onClick={goBack}
+                  onClick={() => setShowTemplates(!showTemplates)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
                     padding: '10px 16px',
-                    backgroundColor: '#6b7280',
+                    backgroundColor: '#3b82f6',
                     color: 'white',
                     border: 'none',
                     borderRadius: '8px',
@@ -440,25 +522,180 @@ const AllegroDescriptionEditor = () => {
                     fontSize: '14px',
                     fontWeight: '500',
                     transition: 'all 0.2s ease',
-                    boxShadow: '0 2px 4px rgba(107, 114, 128, 0.2)'
+                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#4b5563';
+                    e.target.style.backgroundColor = '#2563eb';
                     e.target.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#6b7280';
+                    e.target.style.backgroundColor = '#3b82f6';
                     e.target.style.transform = 'translateY(0)';
                   }}
                 >
-                  ⬅️ Cofnij
+                  📁 {showTemplates ? 'Ukryj szablony' : 'Szablony'}
                 </button>
-              )}
+                {currentStep > 0 && (
+                  <button
+                    onClick={goBack}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 16px',
+                      backgroundColor: '#6b7280',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 4px rgba(107, 114, 128, 0.2)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#4b5563';
+                      e.target.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#6b7280';
+                      e.target.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    ⬅️ Cofnij
+                  </button>
+                )}
+              </div>
             </div>
             <p style={{ color: '#6b7280', margin: 0 }}>
               Stwórz profesjonalny opis produktu w stylu Allegro
             </p>
           </div>
+
+          {/* Sekcja szablonów */}
+          {showTemplates && (
+            <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px', backgroundColor: '#f9fafb' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>Zarządzanie szablonami:</h3>
+              
+              {/* Zapisywanie szablonu */}
+              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                <h4 style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>Zapisz aktualny szablon:</h4>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    placeholder="Nazwa szablonu..."
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '14px'
+                    }}
+                  />
+                  <button
+                    onClick={saveTemplate}
+                    style={{
+                      padding: '8px 16px',
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#059669';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#10b981';
+                    }}
+                  >
+                    💾 Zapisz szablon
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista szablonów */}
+              {templates.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>Zapisane szablony:</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {templates.map(template => (
+                      <div key={template.id} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: '12px', 
+                        backgroundColor: 'white', 
+                        border: '1px solid #e5e7eb', 
+                        borderRadius: '6px' 
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: '500', fontSize: '14px' }}>{template.name}</div>
+                          <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                            {template.sections.length} sekcji • {template.createdAt}
+                            {template.productBrand && template.productCode && 
+                              ` • ${template.productBrand}/${template.productCode}`
+                            }
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button
+                            onClick={() => loadTemplate(template)}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#2563eb';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#3b82f6';
+                            }}
+                          >
+                            📂 Wczytaj
+                          </button>
+                          <button
+                            onClick={() => deleteTemplate(template.id)}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#dc2626';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#ef4444';
+                            }}
+                          >
+                            🗑️ Usuń
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Sekcja konfiguracji produktu */}
           <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px' }}>
@@ -1447,21 +1684,96 @@ const AllegroDescriptionEditor = () => {
                                   ×
                                 </button>
                                 
-                                <input
-                                  type="text"
-                                  value={icon.icon}
-                                  onChange={(e) => updateIconsGrid(section.id, iconIndex, 'icon', e.target.value)}
-                                  style={{
-                                    fontSize: '48px',
-                                    border: 'none',
-                                    textAlign: 'center',
-                                    width: '100%',
-                                    marginBottom: '10px',
-                                    background: 'transparent',
-                                    outline: 'none'
-                                  }}
-                                  placeholder="📌"
-                                />
+                                {/* Ikona lub zdjęcie */}
+                                <div style={{ marginBottom: '10px', position: 'relative' }}>
+                                  {icon.imagePreview ? (
+                                    <div style={{ position: 'relative' }}>
+                                      <img 
+                                        src={icon.imagePreview} 
+                                        alt={icon.title}
+                                        style={{ 
+                                          width: '60px', 
+                                          height: '60px', 
+                                          objectFit: 'cover', 
+                                          borderRadius: '8px',
+                                          margin: '0 auto',
+                                          display: 'block'
+                                        }} 
+                                      />
+                                      <button
+                                        onClick={() => removeIconImage(section.id, iconIndex)}
+                                        style={{
+                                          position: 'absolute',
+                                          top: '-5px',
+                                          right: 'calc(50% - 35px)',
+                                          background: '#ef4444',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: '50%',
+                                          width: '16px',
+                                          height: '16px',
+                                          cursor: 'pointer',
+                                          fontSize: '10px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center'
+                                        }}
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      value={icon.icon}
+                                      onChange={(e) => updateIconsGrid(section.id, iconIndex, 'icon', e.target.value)}
+                                      style={{
+                                        fontSize: '48px',
+                                        border: 'none',
+                                        textAlign: 'center',
+                                        width: '100%',
+                                        background: 'transparent',
+                                        outline: 'none'
+                                      }}
+                                      placeholder="📌"
+                                    />
+                                  )}
+                                </div>
+
+                                {/* Przycisk dodania zdjęcia */}
+                                <div style={{ marginBottom: '10px' }}>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleIconImageUpload(section.id, iconIndex, e)}
+                                    style={{ display: 'none' }}
+                                    ref={(el) => {
+                                      if (el) fileInputRefs.current[`${section.id}-icon-${iconIndex}`] = el;
+                                    }}
+                                  />
+                                  <button
+                                    onClick={() => fileInputRefs.current[`${section.id}-icon-${iconIndex}`]?.click()}
+                                    style={{
+                                      padding: '4px 8px',
+                                      backgroundColor: icon.imagePreview ? '#6b7280' : '#10b981',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      cursor: 'pointer',
+                                      fontSize: '10px',
+                                      fontWeight: '500',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.target.style.backgroundColor = icon.imagePreview ? '#4b5563' : '#059669';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.target.style.backgroundColor = icon.imagePreview ? '#6b7280' : '#10b981';
+                                    }}
+                                  >
+                                    {icon.imagePreview ? '🔄 Zmień zdjęcie' : '📸 Dodaj zdjęcie'}
+                                  </button>
+                                </div>
                                 
                                 <input
                                   type="text"
@@ -1495,6 +1807,12 @@ const AllegroDescriptionEditor = () => {
                                   }}
                                   placeholder="Opis funkcji"
                                 />
+
+                                {icon.image && (
+                                  <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '4px' }}>
+                                    Ścieżka: {generateImagePath(icon.image)}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
