@@ -316,72 +316,227 @@ const AllegroDescriptionEditor = () => {
 
   // Funkcja do generowania HTML z podglądem na żywo (dla podglądu w interfejsie)
   const generatePreviewHTML = () => {
-    let html = '';
+    let html = `<style>
+      /* Mobile-first responsive styles */
+      .responsive-container {
+        background-color: var(--bg-color);
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 15px;
+      }
+      
+      .responsive-flex {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+      }
+      
+      .responsive-text {
+        font-size: var(--font-size);
+        text-align: var(--text-align);
+        line-height: 1.4;
+      }
+      
+      .responsive-image {
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+        max-width: 100%;
+      }
+      
+      .responsive-image-only {
+        width: 100%;
+        height: auto;
+        min-height: 200px;
+        max-height: 400px;
+        border-radius: 10px;
+        object-fit: contain;
+      }
+      
+      .responsive-icons-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+        text-align: center;
+      }
+      
+      .responsive-icon-item {
+        width: 100%;
+        max-width: 180px;
+        min-width: 150px;
+        text-align: center;
+        margin: 5px;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+      
+      .responsive-icon-image {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin: 0 auto 10px;
+        display: block;
+      }
+      
+      .responsive-icon-emoji {
+        font-size: 40px;
+        margin-bottom: 10px;
+        display: block;
+      }
+      
+      .responsive-icon-title {
+        margin: 5px 0;
+        font-weight: bold;
+        font-size: 14px;
+      }
+      
+      .responsive-icon-desc {
+        margin: 0;
+        font-size: 12px;
+        color: #666;
+        line-height: 1.3;
+      }
+      
+      /* Tablet breakpoint: 768px+ */
+      @media (min-width: 768px) {
+        .responsive-container {
+          padding: 20px;
+        }
+        
+        .responsive-flex {
+          flex-direction: row;
+          align-items: center;
+          gap: 20px;
+        }
+        
+        .responsive-flex.reverse {
+          flex-direction: row-reverse;
+        }
+        
+        .responsive-flex > div {
+          flex: 1;
+        }
+        
+        .responsive-image-only {
+          max-height: 500px;
+        }
+        
+        .responsive-icon-item {
+          width: auto;
+          min-width: 180px;
+          max-width: 200px;
+        }
+        
+        .responsive-icon-image {
+          width: 60px;
+          height: 60px;
+        }
+        
+        .responsive-icon-emoji {
+          font-size: 48px;
+        }
+        
+        .responsive-icon-title {
+          font-size: 16px;
+        }
+        
+        .responsive-icon-desc {
+          font-size: 14px;
+        }
+      }
+      
+      /* Desktop breakpoint: 1024px+ */
+      @media (min-width: 1024px) {
+        .responsive-container {
+          padding: 25px;
+        }
+        
+        .responsive-flex {
+          gap: 25px;
+        }
+        
+        .responsive-icon-item {
+          min-width: 200px;
+          max-width: 220px;
+        }
+      }
+    </style>`;
     
     sections.forEach(section => {
-      const containerStyle = `background-color: ${section.backgroundColor}; margin-bottom: 20px; padding: 20px; border-radius: 15px;`;
+      const cssVars = `--bg-color: ${section.backgroundColor}; --font-size: ${section.textFormatting.fontSize}px; --text-align: ${section.textFormatting.textAlign};`;
       
       switch (section.type) {
         case 'text-only':
-          html += `<div style="${containerStyle}">
-            <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
+          html += `<div class="responsive-container" style="${cssVars}">
+            <div class="responsive-text">${section.text}</div>
           </div>\n`;
           break;
           
         case 'image-left':
-          html += `<div style="display: table; width: 100%; ${containerStyle}">
-            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-right: 10px;">
-              ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
-            </div>
-            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-left: 10px;">
-              <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
+          html += `<div class="responsive-container" style="${cssVars}">
+            <div class="responsive-flex">
+              <div>
+                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="responsive-image" alt="">` : ''}
+              </div>
+              <div>
+                <div class="responsive-text">${section.text}</div>
+              </div>
             </div>
           </div>\n`;
           break;
           
         case 'image-right':
-          html += `<div style="display: table; width: 100%; ${containerStyle}">
-            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-right: 10px;">
-              <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
-            </div>
-            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-left: 10px;">
-              ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+          html += `<div class="responsive-container" style="${cssVars}">
+            <div class="responsive-flex reverse">
+              <div>
+                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="responsive-image" alt="">` : ''}
+              </div>
+              <div>
+                <div class="responsive-text">${section.text}</div>
+              </div>
             </div>
           </div>\n`;
           break;
           
         case 'image-only':
-          html += `<div style="text-align: center; ${containerStyle}">
-            ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="max-width: 100%; height: auto; min-height: 200px; max-height: 500px; border-radius: 10px;" alt="">` : ''}
+          html += `<div class="responsive-container" style="${cssVars}">
+            <div style="text-align: center;">
+              ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="responsive-image-only" alt="">` : ''}
+            </div>
           </div>\n`;
           break;
           
         case 'two-images':
-          html += `<div style="display: table; width: 100%; ${containerStyle}">
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 5px; text-align: center;">
-              ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
-            </div>
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 5px; text-align: center;">
-              ${section.imagePreview2 ? `<img src="${section.imagePreview2}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+          html += `<div class="responsive-container" style="${cssVars}">
+            <div class="responsive-flex">
+              <div style="text-align: center;">
+                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="responsive-image" alt="">` : ''}
+              </div>
+              <div style="text-align: center;">
+                ${section.imagePreview2 ? `<img src="${section.imagePreview2}" class="responsive-image" alt="">` : ''}
+              </div>
             </div>
           </div>\n`;
           break;
           
         case 'icons-grid':
           const iconsHtml = section.icons.map(icon => `
-            <div style="display: inline-block; width: 200px; text-align: center; margin: 10px; vertical-align: top;">
-              <div style="margin-bottom: 10px;">
-                ${icon.imagePreview 
-                  ? `<img src="${icon.imagePreview}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;" alt="${icon.title}">`
-                  : `<div style="font-size: 48px;">${icon.icon}</div>`
-                }
-              </div>
-              <h4 style="margin: 5px 0; font-weight: bold;">${icon.title}</h4>
-              <p style="margin: 0; font-size: 14px; color: #666;">${icon.description}</p>
+            <div class="responsive-icon-item">
+              ${icon.imagePreview 
+                ? `<img src="${icon.imagePreview}" class="responsive-icon-image" alt="${icon.title}">`
+                : `<div class="responsive-icon-emoji">${icon.icon}</div>`
+              }
+              <h4 class="responsive-icon-title">${icon.title}</h4>
+              <p class="responsive-icon-desc">${icon.description}</p>
             </div>
           `).join('');
-          html += `<div style="text-align: center; ${containerStyle}">
-            ${iconsHtml}
+          html += `<div class="responsive-container" style="${cssVars}">
+            <div class="responsive-icons-grid">
+              ${iconsHtml}
+            </div>
           </div>\n`;
           break;
           
