@@ -330,10 +330,10 @@ const AllegroDescriptionEditor = () => {
           
         case 'image-left':
           html += `<div style="display: table; width: 100%; ${containerStyle}">
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-right: 10px;">
               ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
+            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-left: 10px;">
               <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
             </div>
           </div>\n`;
@@ -341,10 +341,10 @@ const AllegroDescriptionEditor = () => {
           
         case 'image-right':
           html += `<div style="display: table; width: 100%; ${containerStyle}">
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-right: 10px;">
+            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-right: 10px;">
               <div style="font-size: ${section.textFormatting.fontSize}px; text-align: ${section.textFormatting.textAlign};">${section.text}</div>
             </div>
-            <div style="display: table-cell; width: 50%; vertical-align: top; padding-left: 10px;">
+            <div style="display: table-cell; width: 50%; vertical-align: middle; padding-left: 10px;">
               ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
             </div>
           </div>\n`;
@@ -352,7 +352,7 @@ const AllegroDescriptionEditor = () => {
           
         case 'image-only':
           html += `<div style="text-align: center; ${containerStyle}">
-            ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="max-width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+            ${section.imagePreview1 ? `<img src="${section.imagePreview1}" style="max-width: 100%; height: auto; min-height: 200px; max-height: 500px; border-radius: 10px;" alt="">` : ''}
           </div>\n`;
           break;
           
@@ -431,7 +431,7 @@ const AllegroDescriptionEditor = () => {
           
         case 'image-only':
           html += `<div style="text-align: center; ${containerStyle}">
-            ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="max-width: 100%; height: auto; border-radius: 10px;" alt="">` : ''}
+            ${section.image1 ? `<img src="${generateImagePath(section.image1)}" style="max-width: 100%; height: auto; min-height: 200px; max-height: 500px; border-radius: 10px;" alt="">` : ''}
           </div>\n`;
           break;
           
