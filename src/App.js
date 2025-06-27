@@ -10,7 +10,7 @@ const AllegroDescriptionEditor = () => {
   const [templates, setTemplates] = useState(() => {
     // Wczytaj szablony z localStorage przy starcie
     try {
-      const savedTemplates = localStorage.getItem('allegro-editor-templates');
+      const savedTemplates = localStorage.getItem('sportpoland-editor-templates');
       return savedTemplates ? JSON.parse(savedTemplates) : [];
     } catch (error) {
       console.error('Błąd wczytywania szablonów:', error);
@@ -55,7 +55,7 @@ const AllegroDescriptionEditor = () => {
   // Funkcje szablonów
   const saveTemplateToStorage = (updatedTemplates) => {
     try {
-      localStorage.setItem('allegro-editor-templates', JSON.stringify(updatedTemplates));
+      localStorage.setItem('sportpoland-editor-templates', JSON.stringify(updatedTemplates));
     } catch (error) {
       console.error('Błąd zapisywania szablonów:', error);
       alert('Błąd zapisywania szablonu do przeglądarki!');
@@ -107,7 +107,7 @@ const AllegroDescriptionEditor = () => {
       const url = URL.createObjectURL(dataBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `allegro-templates-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `sportpoland-templates-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -391,34 +391,34 @@ const AllegroDescriptionEditor = () => {
   const generatePreviewHTML = () => {
     let html = `<style>
       /* Mobile-first responsive styles */
-      .responsive-container {
+      .sp-container {
         background-color: var(--bg-color);
         margin-bottom: 20px;
         padding: 15px;
         border-radius: 15px;
       }
       
-      .responsive-flex {
+      .sp-flex {
         display: flex;
         flex-direction: column;
         gap: 15px;
         width: 100%;
       }
       
-      .responsive-text {
+      .sp-text {
         font-size: var(--font-size);
         text-align: var(--text-align);
         line-height: 1.4;
       }
       
-      .responsive-image {
+      .sp-image {
         width: 100%;
         height: auto;
         border-radius: 10px;
         max-width: 100%;
       }
       
-      .responsive-image-only {
+      .sp-image-only {
         width: 100%;
         height: auto;
         min-height: 200px;
@@ -427,7 +427,7 @@ const AllegroDescriptionEditor = () => {
         object-fit: contain;
       }
       
-      .responsive-icons-grid {
+      .sp-icons-grid {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
@@ -435,7 +435,7 @@ const AllegroDescriptionEditor = () => {
         text-align: center;
       }
       
-      .responsive-icon-item {
+      .sp-icon-item {
         width: 100%;
         max-width: 180px;
         min-width: 150px;
@@ -445,7 +445,7 @@ const AllegroDescriptionEditor = () => {
         box-sizing: border-box;
       }
       
-      .responsive-icon-image {
+      .sp-icon-image {
         width: 50px;
         height: 50px;
         object-fit: cover;
@@ -454,19 +454,19 @@ const AllegroDescriptionEditor = () => {
         display: block;
       }
       
-      .responsive-icon-emoji {
+      .sp-icon-emoji {
         font-size: 40px;
         margin-bottom: 10px;
         display: block;
       }
       
-      .responsive-icon-title {
+      .sp-icon-title {
         margin: 5px 0;
         font-weight: bold;
         font-size: 14px;
       }
       
-      .responsive-icon-desc {
+      .sp-icon-desc {
         margin: 0;
         font-size: 12px;
         color: #666;
@@ -475,63 +475,63 @@ const AllegroDescriptionEditor = () => {
       
       /* Tablet breakpoint: 768px+ */
       @media (min-width: 768px) {
-        .responsive-container {
+        .sp-container {
           padding: 20px;
         }
         
-        .responsive-flex {
+        .sp-flex {
           flex-direction: row;
           align-items: center;
           gap: 20px;
         }
         
-        .responsive-flex.reverse {
+        .sp-flex.reverse {
           flex-direction: row-reverse;
         }
         
-        .responsive-flex > div {
+        .sp-flex > div {
           flex: 1;
         }
         
-        .responsive-image-only {
+        .sp-image-only {
           max-height: 500px;
         }
         
-        .responsive-icon-item {
+        .sp-icon-item {
           width: auto;
           min-width: 180px;
           max-width: 200px;
         }
         
-        .responsive-icon-image {
+        .sp-icon-image {
           width: 60px;
           height: 60px;
         }
         
-        .responsive-icon-emoji {
+        .sp-icon-emoji {
           font-size: 48px;
         }
         
-        .responsive-icon-title {
+        .sp-icon-title {
           font-size: 16px;
         }
         
-        .responsive-icon-desc {
+        .sp-icon-desc {
           font-size: 14px;
         }
       }
       
       /* Desktop breakpoint: 1024px+ */
       @media (min-width: 1024px) {
-        .responsive-container {
+        .sp-container {
           padding: 25px;
         }
         
-        .responsive-flex {
+        .sp-flex {
           gap: 25px;
         }
         
-        .responsive-icon-item {
+        .sp-icon-item {
           min-width: 200px;
           max-width: 220px;
         }
@@ -543,53 +543,53 @@ const AllegroDescriptionEditor = () => {
       
       switch (section.type) {
         case 'text-only':
-          html += `<div class="responsive-container" style="${cssVars}">
-            <div class="responsive-text">${section.text}</div>
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-text">${section.text}</div>
           </div>\n`;
           break;
           
         case 'image-left':
-          html += `<div class="responsive-container" style="${cssVars}">
-            <div class="responsive-flex">
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-flex">
               <div>
-                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="responsive-image" alt="">` : ''}
+                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image" alt="">` : ''}
               </div>
               <div>
-                <div class="responsive-text">${section.text}</div>
+                <div class="sp-text">${section.text}</div>
               </div>
             </div>
           </div>\n`;
           break;
           
         case 'image-right':
-          html += `<div class="responsive-container" style="${cssVars}">
-            <div class="responsive-flex reverse">
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-flex reverse">
               <div>
-                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="responsive-image" alt="">` : ''}
+                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image" alt="">` : ''}
               </div>
               <div>
-                <div class="responsive-text">${section.text}</div>
+                <div class="sp-text">${section.text}</div>
               </div>
             </div>
           </div>\n`;
           break;
           
         case 'image-only':
-          html += `<div class="responsive-container" style="${cssVars}">
+          html += `<div class="sp-container" style="${cssVars}">
             <div style="text-align: center;">
-              ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="responsive-image-only" alt="">` : ''}
+              ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image-only" alt="">` : ''}
             </div>
           </div>\n`;
           break;
           
         case 'two-images':
-          html += `<div class="responsive-container" style="${cssVars}">
-            <div class="responsive-flex">
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-flex">
               <div style="text-align: center;">
-                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="responsive-image" alt="">` : ''}
+                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image" alt="">` : ''}
               </div>
               <div style="text-align: center;">
-                ${section.imagePreview2 ? `<img src="${section.imagePreview2}" class="responsive-image" alt="">` : ''}
+                ${section.imagePreview2 ? `<img src="${section.imagePreview2}" class="sp-image" alt="">` : ''}
               </div>
             </div>
           </div>\n`;
@@ -597,17 +597,17 @@ const AllegroDescriptionEditor = () => {
           
         case 'icons-grid':
           const iconsHtml = section.icons.map(icon => `
-            <div class="responsive-icon-item">
+            <div class="sp-icon-item">
               ${icon.imagePreview 
-                ? `<img src="${icon.imagePreview}" class="responsive-icon-image" alt="${icon.title}">`
-                : `<div class="responsive-icon-emoji">${icon.icon}</div>`
+                ? `<img src="${icon.imagePreview}" class="sp-icon-image" alt="${icon.title}">`
+                : `<div class="sp-icon-emoji">${icon.icon}</div>`
               }
-              <h4 class="responsive-icon-title">${icon.title}</h4>
-              <p class="responsive-icon-desc">${icon.description}</p>
+              <h4 class="sp-icon-title">${icon.title}</h4>
+              <p class="sp-icon-desc">${icon.description}</p>
             </div>
           `).join('');
-          html += `<div class="responsive-container" style="${cssVars}">
-            <div class="responsive-icons-grid">
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-icons-grid">
               ${iconsHtml}
             </div>
           </div>\n`;
@@ -624,35 +624,35 @@ const AllegroDescriptionEditor = () => {
   // Funkcja do generowania finalnego HTML (dla eksportu z właściwymi ścieżkami)
   const generateHTML = () => {
     let html = `<style>
-      /* Mobile-first responsive styles for Allegro */
-      .allegro-container {
+      /* Mobile-first responsive styles for SportPoland */
+      .sp-container {
         background-color: var(--bg-color);
         margin-bottom: 20px;
         padding: 15px;
         border-radius: 15px;
       }
       
-      .allegro-flex {
+      .sp-flex {
         display: flex;
         flex-direction: column;
         gap: 15px;
         width: 100%;
       }
       
-      .allegro-text {
+      .sp-text {
         font-size: var(--font-size);
         text-align: var(--text-align);
         line-height: 1.4;
       }
       
-      .allegro-image {
+      .sp-image {
         width: 100%;
         height: auto;
         border-radius: 10px;
         max-width: 100%;
       }
       
-      .allegro-image-only {
+      .sp-image-only {
         width: 100%;
         height: auto;
         min-height: 200px;
@@ -661,7 +661,7 @@ const AllegroDescriptionEditor = () => {
         object-fit: contain;
       }
       
-      .allegro-icons-grid {
+      .sp-icons-grid {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
@@ -669,7 +669,7 @@ const AllegroDescriptionEditor = () => {
         text-align: center;
       }
       
-      .allegro-icon-item {
+      .sp-icon-item {
         width: 100%;
         max-width: 180px;
         min-width: 150px;
@@ -679,7 +679,7 @@ const AllegroDescriptionEditor = () => {
         box-sizing: border-box;
       }
       
-      .allegro-icon-image {
+      .sp-icon-image {
         width: 50px;
         height: 50px;
         object-fit: cover;
@@ -688,19 +688,19 @@ const AllegroDescriptionEditor = () => {
         display: block;
       }
       
-      .allegro-icon-emoji {
+      .sp-icon-emoji {
         font-size: 40px;
         margin-bottom: 10px;
         display: block;
       }
       
-      .allegro-icon-title {
+      .sp-icon-title {
         margin: 5px 0;
         font-weight: bold;
         font-size: 14px;
       }
       
-      .allegro-icon-desc {
+      .sp-icon-desc {
         margin: 0;
         font-size: 12px;
         color: #666;
@@ -709,63 +709,63 @@ const AllegroDescriptionEditor = () => {
       
       /* Tablet breakpoint: 768px+ */
       @media (min-width: 768px) {
-        .allegro-container {
+        .sp-container {
           padding: 20px;
         }
         
-        .allegro-flex {
+        .sp-flex {
           flex-direction: row;
           align-items: center;
           gap: 20px;
         }
         
-        .allegro-flex.reverse {
+        .sp-flex.reverse {
           flex-direction: row-reverse;
         }
         
-        .allegro-flex > div {
+        .sp-flex > div {
           flex: 1;
         }
         
-        .allegro-image-only {
+        .sp-image-only {
           max-height: 500px;
         }
         
-        .allegro-icon-item {
+        .sp-icon-item {
           width: auto;
           min-width: 180px;
           max-width: 200px;
         }
         
-        .allegro-icon-image {
+        .sp-icon-image {
           width: 60px;
           height: 60px;
         }
         
-        .allegro-icon-emoji {
+        .sp-icon-emoji {
           font-size: 48px;
         }
         
-        .allegro-icon-title {
+        .sp-icon-title {
           font-size: 16px;
         }
         
-        .allegro-icon-desc {
+        .sp-icon-desc {
           font-size: 14px;
         }
       }
       
       /* Desktop breakpoint: 1024px+ */
       @media (min-width: 1024px) {
-        .allegro-container {
+        .sp-container {
           padding: 25px;
         }
         
-        .allegro-flex {
+        .sp-flex {
           gap: 25px;
         }
         
-        .allegro-icon-item {
+        .sp-icon-item {
           min-width: 200px;
           max-width: 220px;
         }
@@ -777,53 +777,53 @@ const AllegroDescriptionEditor = () => {
       
       switch (section.type) {
         case 'text-only':
-          html += `<div class="allegro-container" style="${cssVars}">
-            <div class="allegro-text">${section.text}</div>
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-text">${section.text}</div>
           </div>\n`;
           break;
           
         case 'image-left':
-          html += `<div class="allegro-container" style="${cssVars}">
-            <div class="allegro-flex">
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-flex">
               <div>
-                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="allegro-image" alt="">` : ''}
+                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="">` : ''}
               </div>
               <div>
-                <div class="allegro-text">${section.text}</div>
+                <div class="sp-text">${section.text}</div>
               </div>
             </div>
           </div>\n`;
           break;
           
         case 'image-right':
-          html += `<div class="allegro-container" style="${cssVars}">
-            <div class="allegro-flex reverse">
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-flex reverse">
               <div>
-                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="allegro-image" alt="">` : ''}
+                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="">` : ''}
               </div>
               <div>
-                <div class="allegro-text">${section.text}</div>
+                <div class="sp-text">${section.text}</div>
               </div>
             </div>
           </div>\n`;
           break;
           
         case 'image-only':
-          html += `<div class="allegro-container" style="${cssVars}">
+          html += `<div class="sp-container" style="${cssVars}">
             <div style="text-align: center;">
-              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="allegro-image-only" alt="">` : ''}
+              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image-only" alt="">` : ''}
             </div>
           </div>\n`;
           break;
           
         case 'two-images':
-          html += `<div class="allegro-container" style="${cssVars}">
-            <div class="allegro-flex">
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-flex">
               <div style="text-align: center;">
-                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="allegro-image" alt="">` : ''}
+                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="">` : ''}
               </div>
               <div style="text-align: center;">
-                ${section.image2 ? `<img src="${generateImagePath(section.image2)}" class="allegro-image" alt="">` : ''}
+                ${section.image2 ? `<img src="${generateImagePath(section.image2)}" class="sp-image" alt="">` : ''}
               </div>
             </div>
           </div>\n`;
@@ -831,17 +831,17 @@ const AllegroDescriptionEditor = () => {
           
         case 'icons-grid':
           const iconsHtml = section.icons.map(icon => `
-            <div class="allegro-icon-item">
+            <div class="sp-icon-item">
               ${icon.image 
-                ? `<img src="${generateImagePath(icon.image)}" class="allegro-icon-image" alt="${icon.title}">`
-                : `<div class="allegro-icon-emoji">${icon.icon}</div>`
+                ? `<img src="${generateImagePath(icon.image)}" class="sp-icon-image" alt="${icon.title}">`
+                : `<div class="sp-icon-emoji">${icon.icon}</div>`
               }
-              <h4 class="allegro-icon-title">${icon.title}</h4>
-              <p class="allegro-icon-desc">${icon.description}</p>
+              <h4 class="sp-icon-title">${icon.title}</h4>
+              <p class="sp-icon-desc">${icon.description}</p>
             </div>
           `).join('');
-          html += `<div class="allegro-container" style="${cssVars}">
-            <div class="allegro-icons-grid">
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-icons-grid">
               ${iconsHtml}
             </div>
           </div>\n`;
@@ -887,7 +887,7 @@ const AllegroDescriptionEditor = () => {
           <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
-                Edytor Opisów Produktów
+                Edytor Opisów Produktów SportPoland
               </h1>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
@@ -951,7 +951,7 @@ const AllegroDescriptionEditor = () => {
               </div>
             </div>
             <p style={{ color: '#6b7280', margin: 0 }}>
-              Stwórz profesjonalny opis produktu w stylu Allegro
+              Stwórz profesjonalny opis produktu dla sklepu SportPoland
             </p>
           </div>
 
@@ -1005,7 +1005,64 @@ const AllegroDescriptionEditor = () => {
               {/* Lista szablonów */}
               {templates.length > 0 && (
                 <div>
-                  <h4 style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>Zapisane szablony:</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '500', margin: 0 }}>Zapisane szablony:</h4>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={importTemplates}
+                        style={{ display: 'none' }}
+                        id="import-templates"
+                      />
+                      <button
+                        onClick={() => document.getElementById('import-templates').click()}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#2563eb';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#3b82f6';
+                        }}
+                        title="Importuj szablony z pliku JSON"
+                      >
+                        📥 Import
+                      </button>
+                      <button
+                        onClick={exportTemplates}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#059669';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#10b981';
+                        }}
+                        title="Eksportuj wszystkie szablony do pliku JSON"
+                      >
+                        📤 Eksport
+                      </button>
+                    </div>
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {templates.map(template => (
                       <div key={template.id} style={{ 
