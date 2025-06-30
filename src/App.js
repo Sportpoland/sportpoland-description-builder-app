@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const AllegroDescriptionEditor = () => {
   const [sections, setSections] = useState([]);
@@ -11,6 +11,23 @@ const AllegroDescriptionEditor = () => {
   const [templateName, setTemplateName] = useState('');
   const [showTemplates, setShowTemplates] = useState(false);
   const fileInputRefs = useRef({});
+
+   useEffect(() => {
+    // Wczytaj szablony przy starcie
+    const saved = localStorage.getItem('sportpoland-templates');
+    if (saved) {
+      try {
+        setTemplates(JSON.parse(saved));
+      } catch (error) {
+        console.error('Błąd wczytywania:', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    // Zapisuj automatycznie przy każdej zmianie
+    localStorage.setItem('sportpoland-templates', JSON.stringify(templates));
+  }, [templates]);
 
   const sectionTypes = [
     { id: 'text-only', name: 'Sam opis', icon: '📝' },
