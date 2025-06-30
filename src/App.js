@@ -992,6 +992,123 @@ const AllegroDescriptionEditor = () => {
                 </div>
               </div>
 
+{/* Przyciski Import/Eksport */}
+              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: '500', margin: 0 }}>Zarządzanie plikami szablonów:</h4>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={importTemplates}
+                      style={{ display: 'none' }}
+                      id="import-templates"
+                    />
+                    <button
+                      onClick={() => document.getElementById('import-templates').click()}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                      }}
+                      title="Importuj szablony z pliku JSON"
+                    >
+                      📥 Import
+                    </button>
+                    <button
+                      onClick={exportTemplates}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#10b981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease'
+                      }}
+                      title="Eksportuj wszystkie szablony do pliku JSON"
+                    >
+                      📤 Eksport
+                    </button>
+                  </div>
+                </div>
+                <p style={{ fontSize: '12px', color: '#6b7280', margin: 0 }}>
+                  Importuj szablony z pliku JSON lub eksportuj aktualne szablony do kopii zapasowej.
+                </p>
+              </div>
+
+              {/* Lista szablonów */}
+              {templates.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>Zapisane szablony:</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {templates.map(template => (
+                      <div key={template.id} style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: '12px', 
+                        backgroundColor: 'white', 
+                        border: '1px solid #e5e7eb', 
+                        borderRadius: '6px' 
+                      }}>
+                        <div>
+                          <div style={{ fontWeight: '500', fontSize: '14px' }}>{template.name}</div>
+                          <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                            {template.sections.length} sekcji • {template.createdAt}
+                            {template.productBrand && template.productCode && 
+                              ` • ${template.productBrand}/${template.productCode}`
+                            }
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button
+                            onClick={() => loadTemplate(template)}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            📂 Wczytaj
+                          </button>
+                          <button
+                            onClick={() => deleteTemplate(template.id)}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            🗑️ Usuń
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Lista szablonów */}
               {templates.length > 0 && (
                 <div>
