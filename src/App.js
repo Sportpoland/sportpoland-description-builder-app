@@ -383,7 +383,7 @@ const AllegroDescriptionEditor = () => {
         width: 100%;
         height: auto;
         border-radius: 10px;
-        max-width: 100%;
+        max-width: 250px;
       }
       
       .sp-image-only {
@@ -393,6 +393,11 @@ const AllegroDescriptionEditor = () => {
         max-height: 400px;
         border-radius: 10px;
         object-fit: contain;
+      }
+      
+      .sp-image-only-container {
+        display: flex;
+        justify-content: center;
       }
       
       .sp-icons-grid {
@@ -458,6 +463,10 @@ const AllegroDescriptionEditor = () => {
         
         .sp-flex > div {
           flex: 1;
+        }
+        
+        .sp-image {
+          max-width: 400px;
         }
         
         .sp-image-only {
@@ -545,7 +554,7 @@ const AllegroDescriptionEditor = () => {
         case 'image-only':
           const altOnly = generateAltText(section.image1, 'Zdjęcie produktu');
           html += `<div class="sp-container" style="${cssVars}">
-            <div style="text-align: center;">
+            <div class="sp-image-only-container">
               ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image-only" alt="${altOnly}">` : ''}
             </div>
           </div>\n`;
@@ -621,7 +630,7 @@ const AllegroDescriptionEditor = () => {
         width: 100%;
         height: auto;
         border-radius: 10px;
-        max-width: 100%;
+        max-width: 250px;
       }
       
       .sp-image-only {
@@ -631,6 +640,11 @@ const AllegroDescriptionEditor = () => {
         max-height: 400px;
         border-radius: 10px;
         object-fit: contain;
+      }
+      
+      .sp-image-only-container {
+        display: flex;
+        justify-content: center;
       }
       
       .sp-icons-grid {
@@ -696,6 +710,10 @@ const AllegroDescriptionEditor = () => {
         
         .sp-flex > div {
           flex: 1;
+        }
+        
+        .sp-image {
+          max-width: 400px;
         }
         
         .sp-image-only {
@@ -783,7 +801,7 @@ const AllegroDescriptionEditor = () => {
         case 'image-only':
           const altOnly = generateAltText(section.image1, 'Zdjęcie produktu');
           html += `<div class="sp-container" style="${cssVars}">
-            <div style="text-align: center;">
+            <div class="sp-image-only-container">
               ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image-only" alt="${altOnly}">` : ''}
             </div>
           </div>\n`;
