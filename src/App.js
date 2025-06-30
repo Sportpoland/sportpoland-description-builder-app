@@ -13,7 +13,7 @@ const AllegroDescriptionEditor = () => {
   const fileInputRefs = useRef({});
 
    useEffect(() => {
-    // Wczytaj szablony przy starcie
+    // Wczytaj szablony przy starcie.
     const saved = localStorage.getItem('sportpoland-templates');
     if (saved) {
       try {
