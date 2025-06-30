@@ -7,7 +7,7 @@ const AllegroDescriptionEditor = () => {
   const [productCode, setProductCode] = useState('');
   const [history, setHistory] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
-  const [templates, setTemplates] = useState([]); 
+  const [templates, setTemplates] = useState([]);
   const [templateName, setTemplateName] = useState('');
   const [showTemplates, setShowTemplates] = useState(false);
   const fileInputRefs = useRef({});
@@ -21,6 +21,24 @@ const AllegroDescriptionEditor = () => {
     { id: 'icons-grid', name: 'Siatka ikon z opisami', icon: '⊞' }
   ];
 
+  // Funkcja do generowania automatycznych alt tekstów
+  const generateAltText = (imageName, context = '') => {
+    if (!imageName) return '';
+    
+    let altText = imageName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, ' ');
+    
+    if (context) {
+      altText = `${context} - ${altText}`;
+    }
+    
+    if (productBrand && productCode) {
+      altText = `${productBrand} ${productCode} ${altText}`;
+    }
+    
+    return altText;
+  };
+
+  // Historia dla przycisku wstecz
   const saveToHistory = () => {
     const newHistory = history.slice(0, currentStep + 1);
     newHistory.push({
@@ -42,6 +60,7 @@ const AllegroDescriptionEditor = () => {
     }
   };
 
+  // Funkcje szablonów
   const saveTemplate = () => {
     if (!templateName.trim()) {
       alert('Podaj nazwę szablonu!');
@@ -74,6 +93,53 @@ const AllegroDescriptionEditor = () => {
     if (window.confirm('Czy na pewno chcesz usunąć ten szablon?')) {
       setTemplates(templates.filter(t => t.id !== templateId));
     }
+  };
+
+  const exportTemplates = () => {
+    try {
+      const dataStr = JSON.stringify(templates, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sportpoland-templates-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Błąd eksportu:', error);
+      alert('Błąd eksportowania szablonów!');
+    }
+  };
+
+  const importTemplates = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedTemplates = JSON.parse(e.target.result);
+        if (!Array.isArray(importedTemplates)) {
+          throw new Error('Nieprawidłowy format pliku');
+        }
+
+        const templatesWithNewIds = importedTemplates.map(template => ({
+          ...template,
+          id: Date.now() + Math.random(),
+          createdAt: `${template.createdAt} (importowany)`
+        }));
+
+        setTemplates([...templates, ...templatesWithNewIds]);
+        alert(`Zaimportowano ${templatesWithNewIds.length} szablonów!`);
+      } catch (error) {
+        console.error('Błąd importu:', error);
+        alert('Błąd importowania szablonów! Sprawdź czy plik jest prawidłowy.');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
   };
 
   const addSection = (type) => {
@@ -135,10 +201,71 @@ const AllegroDescriptionEditor = () => {
     setSections(newSections);
   };
 
+  const copySection = (id) => {
+    saveToHistory();
+    const sectionToCopy = sections.find(section => section.id === id);
+    if (sectionToCopy) {
+      const copiedSection = {
+        ...sectionToCopy,
+        id: Date.now(),
+        imagePreview1: '',
+        imagePreview2: '',
+        icons: sectionToCopy.icons ? sectionToCopy.icons.map(icon => ({
+          ...icon,
+          id: Date.now() + Math.random(),
+          imagePreview: ''
+        })) : undefined
+      };
+      setSections([...sections, copiedSection]);
+    }
+  };
+
   const updateSection = (id, field, value) => {
     setSections(sections.map(section => 
       section.id === id ? { ...section, [field]: value } : section
     ));
+  };
+
+  const updateIconsGrid = (sectionId, iconIndex, field, value) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        const newIcons = [...section.icons];
+        newIcons[iconIndex] = { ...newIcons[iconIndex], [field]: value };
+        return { ...section, icons: newIcons };
+      }
+      return section;
+    }));
+  };
+
+  const addIconToGrid = (sectionId) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        const newIcon = {
+          id: Date.now(),
+          icon: '📌',
+          title: 'Nowy tytuł',
+          description: 'Nowy opis',
+          image: '',
+          imagePreview: ''
+        };
+        return { ...section, icons: [...section.icons, newIcon] };
+      }
+      return section;
+    }));
+  };
+
+  const removeIconFromGrid = (sectionId, iconIndex) => {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        const iconToRemove = section.icons[iconIndex];
+        if (iconToRemove && iconToRemove.imagePreview) {
+          URL.revokeObjectURL(iconToRemove.imagePreview);
+        }
+        const newIcons = section.icons.filter((_, index) => index !== iconIndex);
+        return { ...section, icons: newIcons };
+      }
+      return section;
+    }));
   };
 
   const updateTextFormatting = (id, property, value) => {
@@ -150,6 +277,48 @@ const AllegroDescriptionEditor = () => {
           } 
         : section
     ));
+  };
+
+  const handleIconImageUpload = (sectionId, iconIndex, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const imageName = file.name;
+      const imageURL = URL.createObjectURL(file);
+      
+      setSections(prevSections => {
+        return prevSections.map(section => {
+          if (section.id === sectionId) {
+            const updatedIcons = section.icons.map((icon, index) => 
+              index === iconIndex 
+                ? { ...icon, image: imageName, imagePreview: imageURL }
+                : icon
+            );
+            return { ...section, icons: updatedIcons };
+          }
+          return section;
+        });
+      });
+    }
+  };
+
+  const removeIconImage = (sectionId, iconIndex) => {
+    setSections(prevSections => {
+      return prevSections.map(section => {
+        if (section.id === sectionId) {
+          const updatedIcons = section.icons.map((icon, index) => {
+            if (index === iconIndex) {
+              if (icon.imagePreview) {
+                URL.revokeObjectURL(icon.imagePreview);
+              }
+              return { ...icon, image: '', imagePreview: '' };
+            }
+            return icon;
+          });
+          return { ...section, icons: updatedIcons };
+        }
+        return section;
+      });
+    });
   };
 
   const handleImageUpload = (sectionId, imageField, event) => {
@@ -174,8 +343,9 @@ const AllegroDescriptionEditor = () => {
     }
   };
 
-  const handleTextChange = (sectionId, content) => {
-    updateSection(sectionId, 'text', content);
+  // Uproszczona obsługa tekstu
+  const handleTextChange = (sectionId, value) => {
+    updateSection(sectionId, 'text', value);
   };
 
   const generateImagePath = (imageName) => {
@@ -186,9 +356,9 @@ const AllegroDescriptionEditor = () => {
     return `/data/include/cms/sportpoland_com/pliki-opisy/${productBrand}/${productCode}/${imageName}`;
   };
 
-  const generateHTML = () => {
+  // Funkcja do generowania HTML z podglądem na żywo
+  const generatePreviewHTML = () => {
     let html = `<style>
-      /* Mobile-first responsive styles for SportPoland */
       .sp-container {
         background-color: var(--bg-color);
         margin-bottom: 20px;
@@ -271,7 +441,6 @@ const AllegroDescriptionEditor = () => {
         line-height: 1.3;
       }
       
-      /* Tablet breakpoint: 768px+ */
       @media (min-width: 768px) {
         .sp-container {
           padding: 20px;
@@ -319,7 +488,6 @@ const AllegroDescriptionEditor = () => {
         }
       }
       
-      /* Desktop breakpoint: 1024px+ */
       @media (min-width: 1024px) {
         .sp-container {
           padding: 25px;
@@ -347,10 +515,11 @@ const AllegroDescriptionEditor = () => {
           break;
           
         case 'image-left':
+          const altLeft = generateAltText(section.image1, 'Zdjęcie produktu');
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-flex">
               <div>
-                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="">` : ''}
+                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image" alt="${altLeft}">` : ''}
               </div>
               <div>
                 <div class="sp-text">${section.text}</div>
@@ -360,10 +529,11 @@ const AllegroDescriptionEditor = () => {
           break;
           
         case 'image-right':
+          const altRight = generateAltText(section.image1, 'Zdjęcie produktu');
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-flex reverse">
               <div>
-                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="">` : ''}
+                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image" alt="${altRight}">` : ''}
               </div>
               <div>
                 <div class="sp-text">${section.text}</div>
@@ -373,37 +543,280 @@ const AllegroDescriptionEditor = () => {
           break;
           
         case 'image-only':
+          const altOnly = generateAltText(section.image1, 'Zdjęcie produktu');
           html += `<div class="sp-container" style="${cssVars}">
             <div style="text-align: center;">
-              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image-only" alt="">` : ''}
+              ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image-only" alt="${altOnly}">` : ''}
             </div>
           </div>\n`;
           break;
           
         case 'two-images':
+          const altTwo1 = generateAltText(section.image1, 'Zdjęcie produktu 1');
+          const altTwo2 = generateAltText(section.image2, 'Zdjęcie produktu 2');
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-flex">
               <div style="text-align: center;">
-                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="">` : ''}
+                ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image" alt="${altTwo1}">` : ''}
               </div>
               <div style="text-align: center;">
-                ${section.image2 ? `<img src="${generateImagePath(section.image2)}" class="sp-image" alt="">` : ''}
+                ${section.imagePreview2 ? `<img src="${section.imagePreview2}" class="sp-image" alt="${altTwo2}">` : ''}
               </div>
             </div>
           </div>\n`;
           break;
           
         case 'icons-grid':
-          const iconsHtml = section.icons.map(icon => `
+          const iconsHtml = section.icons.map(icon => {
+            const iconAlt = generateAltText(icon.image, icon.title);
+            return `
             <div class="sp-icon-item">
-              ${icon.image 
-                ? `<img src="${generateImagePath(icon.image)}" class="sp-icon-image" alt="${icon.title}">`
+              ${icon.imagePreview 
+                ? `<img src="${icon.imagePreview}" class="sp-icon-image" alt="${iconAlt}">`
                 : `<div class="sp-icon-emoji">${icon.icon}</div>`
               }
               <h4 class="sp-icon-title">${icon.title}</h4>
               <p class="sp-icon-desc">${icon.description}</p>
             </div>
-          `).join('');
+          `;}).join('');
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-icons-grid">
+              ${iconsHtml}
+            </div>
+          </div>\n`;
+          break;
+          
+        default:
+          break;
+      }
+    });
+    
+    return html;
+  };
+
+  // Funkcja do generowania finalnego HTML
+  const generateHTML = () => {
+    let html = `<style>
+      .sp-container {
+        background-color: var(--bg-color);
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 15px;
+      }
+      
+      .sp-flex {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 100%;
+      }
+      
+      .sp-text {
+        font-size: var(--font-size);
+        text-align: var(--text-align);
+        line-height: 1.4;
+      }
+      
+      .sp-image {
+        width: 100%;
+        height: auto;
+        border-radius: 10px;
+        max-width: 100%;
+      }
+      
+      .sp-image-only {
+        width: 100%;
+        height: auto;
+        min-height: 200px;
+        max-height: 400px;
+        border-radius: 10px;
+        object-fit: contain;
+      }
+      
+      .sp-icons-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+        text-align: center;
+      }
+      
+      .sp-icon-item {
+        width: 100%;
+        max-width: 180px;
+        min-width: 150px;
+        text-align: center;
+        margin: 5px;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+      
+      .sp-icon-image {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin: 0 auto 10px;
+        display: block;
+      }
+      
+      .sp-icon-emoji {
+        font-size: 40px;
+        margin-bottom: 10px;
+        display: block;
+      }
+      
+      .sp-icon-title {
+        margin: 5px 0;
+        font-weight: bold;
+        font-size: 14px;
+      }
+      
+      .sp-icon-desc {
+        margin: 0;
+        font-size: 12px;
+        color: #666;
+        line-height: 1.3;
+      }
+      
+      @media (min-width: 768px) {
+        .sp-container {
+          padding: 20px;
+        }
+        
+        .sp-flex {
+          flex-direction: row;
+          align-items: center;
+          gap: 20px;
+        }
+        
+        .sp-flex.reverse {
+          flex-direction: row-reverse;
+        }
+        
+        .sp-flex > div {
+          flex: 1;
+        }
+        
+        .sp-image-only {
+          max-height: 500px;
+        }
+        
+        .sp-icon-item {
+          width: auto;
+          min-width: 180px;
+          max-width: 200px;
+        }
+        
+        .sp-icon-image {
+          width: 60px;
+          height: 60px;
+        }
+        
+        .sp-icon-emoji {
+          font-size: 48px;
+        }
+        
+        .sp-icon-title {
+          font-size: 16px;
+        }
+        
+        .sp-icon-desc {
+          font-size: 14px;
+        }
+      }
+      
+      @media (min-width: 1024px) {
+        .sp-container {
+          padding: 25px;
+        }
+        
+        .sp-flex {
+          gap: 25px;
+        }
+        
+        .sp-icon-item {
+          min-width: 200px;
+          max-width: 220px;
+        }
+      }
+    </style>`;
+    
+    sections.forEach(section => {
+      const cssVars = `--bg-color: ${section.backgroundColor}; --font-size: ${section.textFormatting.fontSize}px; --text-align: ${section.textFormatting.textAlign};`;
+      
+      switch (section.type) {
+        case 'text-only':
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-text">${section.text}</div>
+          </div>\n`;
+          break;
+          
+        case 'image-left':
+          const altLeft = generateAltText(section.image1, 'Zdjęcie produktu');
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-flex">
+              <div>
+                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="${altLeft}">` : ''}
+              </div>
+              <div>
+                <div class="sp-text">${section.text}</div>
+              </div>
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'image-right':
+          const altRight = generateAltText(section.image1, 'Zdjęcie produktu');
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-flex reverse">
+              <div>
+                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="${altRight}">` : ''}
+              </div>
+              <div>
+                <div class="sp-text">${section.text}</div>
+              </div>
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'image-only':
+          const altOnly = generateAltText(section.image1, 'Zdjęcie produktu');
+          html += `<div class="sp-container" style="${cssVars}">
+            <div style="text-align: center;">
+              ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image-only" alt="${altOnly}">` : ''}
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'two-images':
+          const altTwo1 = generateAltText(section.image1, 'Zdjęcie produktu 1');
+          const altTwo2 = generateAltText(section.image2, 'Zdjęcie produktu 2');
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-flex">
+              <div style="text-align: center;">
+                ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="${altTwo1}">` : ''}
+              </div>
+              <div style="text-align: center;">
+                ${section.image2 ? `<img src="${generateImagePath(section.image2)}" class="sp-image" alt="${altTwo2}">` : ''}
+              </div>
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'icons-grid':
+          const iconsHtml = section.icons.map(icon => {
+            const iconAlt = generateAltText(icon.image, icon.title);
+            return `
+            <div class="sp-icon-item">
+              ${icon.image 
+                ? `<img src="${generateImagePath(icon.image)}" class="sp-icon-image" alt="${iconAlt}">`
+                : `<div class="sp-icon-emoji">${icon.icon}</div>`
+              }
+              <h4 class="sp-icon-title">${icon.title}</h4>
+              <p class="sp-icon-desc">${icon.description}</p>
+            </div>
+          `;}).join('');
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-icons-grid">
               ${iconsHtml}
@@ -430,6 +843,19 @@ const AllegroDescriptionEditor = () => {
     }
   };
 
+  const downloadHTML = () => {
+    const html = generateHTML();
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'opis-produktu.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', fontFamily: 'Arial, sans-serif' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
@@ -438,7 +864,7 @@ const AllegroDescriptionEditor = () => {
           <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
-                Edytor Opisów Produktów SportPoland (Naprawiony)
+                Edytor Opisów Produktów SportPoland
               </h1>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button
@@ -454,7 +880,9 @@ const AllegroDescriptionEditor = () => {
                     borderRadius: '8px',
                     cursor: 'pointer',
                     fontSize: '14px',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)'
                   }}
                 >
                   📁 {showTemplates ? 'Ukryj szablony' : 'Szablony'}
@@ -473,7 +901,9 @@ const AllegroDescriptionEditor = () => {
                       borderRadius: '8px',
                       cursor: 'pointer',
                       fontSize: '14px',
-                      fontWeight: '500'
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 4px rgba(107, 114, 128, 0.2)'
                     }}
                   >
                     ⬅️ Cofnij
@@ -491,6 +921,7 @@ const AllegroDescriptionEditor = () => {
             <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px', backgroundColor: '#f9fafb' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>Zarządzanie szablonami:</h3>
               
+              {/* Zapisywanie szablonu */}
               <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                 <h4 style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>Zapisz aktualny szablon:</h4>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -517,7 +948,8 @@ const AllegroDescriptionEditor = () => {
                       borderRadius: '6px',
                       cursor: 'pointer',
                       fontSize: '14px',
-                      fontWeight: '500'
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease'
                     }}
                   >
                     💾 Zapisz szablon
@@ -525,9 +957,55 @@ const AllegroDescriptionEditor = () => {
                 </div>
               </div>
 
+              {/* Lista szablonów */}
               {templates.length > 0 && (
                 <div>
-                  <h4 style={{ fontSize: '16px', fontWeight: '500', margin: 0, marginBottom: '8px' }}>Zapisane szablony:</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '500', margin: 0 }}>Zapisane szablony:</h4>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={importTemplates}
+                        style={{ display: 'none' }}
+                        id="import-templates"
+                      />
+                      <button
+                        onClick={() => document.getElementById('import-templates').click()}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease'
+                        }}
+                        title="Importuj szablony z pliku JSON"
+                      >
+                        📥 Import
+                      </button>
+                      <button
+                        onClick={exportTemplates}
+                        style={{
+                          padding: '6px 12px',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease'
+                        }}
+                        title="Eksportuj wszystkie szablony do pliku JSON"
+                      >
+                        📤 Eksport
+                      </button>
+                    </div>
+                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {templates.map(template => (
                       <div key={template.id} style={{ 
@@ -543,6 +1021,9 @@ const AllegroDescriptionEditor = () => {
                           <div style={{ fontWeight: '500', fontSize: '14px' }}>{template.name}</div>
                           <div style={{ fontSize: '12px', color: '#6b7280' }}>
                             {template.sections.length} sekcji • {template.createdAt}
+                            {template.productBrand && template.productCode && 
+                              ` • ${template.productBrand}/${template.productCode}`
+                            }
                           </div>
                         </div>
                         <div style={{ display: 'flex', gap: '4px' }}>
@@ -556,7 +1037,8 @@ const AllegroDescriptionEditor = () => {
                               borderRadius: '4px',
                               cursor: 'pointer',
                               fontSize: '12px',
-                              fontWeight: '500'
+                              fontWeight: '500',
+                              transition: 'all 0.2s ease'
                             }}
                           >
                             📂 Wczytaj
@@ -571,7 +1053,8 @@ const AllegroDescriptionEditor = () => {
                               borderRadius: '4px',
                               cursor: 'pointer',
                               fontSize: '12px',
-                              fontWeight: '500'
+                              fontWeight: '500',
+                              transition: 'all 0.2s ease'
                             }}
                           >
                             🗑️ Usuń
@@ -585,7 +1068,7 @@ const AllegroDescriptionEditor = () => {
             </div>
           )}
 
-          {/* Konfiguracja produktu */}
+          {/* Sekcja konfiguracji produktu */}
           <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>Konfiguracja produktu:</h3>
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -628,9 +1111,13 @@ const AllegroDescriptionEditor = () => {
                 />
               </div>
             </div>
+            {productBrand && productCode && (
+              <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#f0f9ff', borderRadius: '4px', fontSize: '12px', color: '#0369a1' }}>
+                Ścieżka do zdjęć: /data/include/cms/sportpoland_com/pliki-opisy/{productBrand}/{productCode}/[nazwa-zdjęcia]
+              </div>
+            )}
           </div>
 
-          {/* Dodawanie sekcji */}
           <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>Dodaj sekcję:</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -649,7 +1136,9 @@ const AllegroDescriptionEditor = () => {
                     borderRadius: '8px',
                     cursor: 'pointer',
                     fontSize: '14px',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
                   }}
                 >
                   <span>{type.icon}</span>
@@ -659,7 +1148,6 @@ const AllegroDescriptionEditor = () => {
             </div>
           </div>
 
-          {/* Główna zawartość */}
           <div style={{ padding: '16px' }}>
             {sections.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px', color: '#6b7280' }}>
@@ -671,7 +1159,6 @@ const AllegroDescriptionEditor = () => {
                 {sections.map((section, index) => (
                   <div key={section.id} style={{ border: '1px solid #e5e7eb', borderRadius: '15px' }}>
                     
-                    {/* Nagłówek sekcji */}
                     <div style={{ 
                       display: 'flex', 
                       justifyContent: 'space-between', 
@@ -696,6 +1183,7 @@ const AllegroDescriptionEditor = () => {
                             color: index === 0 ? '#ccc' : '#6b7280',
                             fontSize: '16px'
                           }}
+                          title="Przesuń w górę"
                         >
                           ⬆️
                         </button>
@@ -710,8 +1198,23 @@ const AllegroDescriptionEditor = () => {
                             color: index === sections.length - 1 ? '#ccc' : '#6b7280',
                             fontSize: '16px'
                           }}
+                          title="Przesuń w dół"
                         >
                           ⬇️
+                        </button>
+                        <button
+                          onClick={() => copySection(section.id)}
+                          style={{
+                            padding: '4px',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#6b7280',
+                            fontSize: '16px'
+                          }}
+                          title="Kopiuj sekcję"
+                        >
+                          📋
                         </button>
                         <button
                           onClick={() => deleteSection(section.id)}
@@ -723,13 +1226,13 @@ const AllegroDescriptionEditor = () => {
                             color: '#ef4444',
                             fontSize: '16px'
                           }}
+                          title="Usuń sekcję"
                         >
                           🗑️
                         </button>
                       </div>
                     </div>
 
-                    {/* Konfiguracja tła */}
                     <div style={{ 
                       backgroundColor: '#f9fafb', 
                       padding: '8px 16px', 
@@ -761,22 +1264,52 @@ const AllegroDescriptionEditor = () => {
                           border: 'none',
                           borderRadius: '6px',
                           cursor: 'pointer',
-                          fontWeight: '500'
+                          fontWeight: '500',
+                          transition: 'all 0.2s ease'
                         }}
                       >
                         Reset
                       </button>
+                      
+                      {/* Formatowanie tekstu */}
+                      {['text-only', 'image-left', 'image-right'].includes(section.type) && (
+                        <>
+                          <select
+                            value={section.textFormatting.fontSize}
+                            onChange={(e) => updateTextFormatting(section.id, 'fontSize', e.target.value)}
+                            style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '14px' }}
+                          >
+                            <option value="12">12px</option>
+                            <option value="14">14px</option>
+                            <option value="16">16px</option>
+                            <option value="18">18px</option>
+                            <option value="20">20px</option>
+                            <option value="24">24px</option>
+                          </select>
+                          
+                          <select
+                            value={section.textFormatting.textAlign}
+                            onChange={(e) => updateTextFormatting(section.id, 'textAlign', e.target.value)}
+                            style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '14px' }}
+                          >
+                            <option value="left">Do lewej</option>
+                            <option value="center">Na środek</option>
+                            <option value="right">Do prawej</option>
+                            <option value="justify">Wyjustuj</option>
+                          </select>
+                        </>
+                      )}
                     </div>
 
-                    {/* Zawartość sekcji */}
                     <div style={{ backgroundColor: section.backgroundColor, padding: '16px', borderRadius: '0 0 15px 15px' }}>
                       {section.type === 'text-only' && (
                         <div style={{ position: 'relative' }}>
-                          <div
-                            id={`editor-${section.id}`}
-                            contentEditable
-                            onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
+                          <textarea
+                            value={section.text}
+                            onChange={(e) => handleTextChange(section.id, e.target.value)}
+                            placeholder="Wprowadź tekst..."
                             style={{
+                              width: '100%',
                               minHeight: '120px',
                               padding: '8px',
                               border: '1px solid #d1d5db',
@@ -785,26 +1318,11 @@ const AllegroDescriptionEditor = () => {
                               textAlign: section.textFormatting.textAlign,
                               outline: 'none',
                               backgroundColor: 'white',
-                              direction: 'ltr',
-                              unicodeBidi: 'embed'
+                              fontFamily: 'inherit',
+                              resize: 'vertical',
+                              boxSizing: 'border-box'
                             }}
-                            dangerouslySetInnerHTML={{ __html: section.text }}
                           />
-                          {!section.text && (
-                            <div
-                              style={{
-                                position: 'absolute',
-                                top: '8px',
-                                left: '8px',
-                                color: '#9ca3af',
-                                pointerEvents: 'none',
-                                fontSize: `${section.textFormatting.fontSize}px`,
-                                padding: '8px'
-                              }}
-                            >
-                              Wprowadź tekst...
-                            </div>
-                          )}
                         </div>
                       )}
                       
@@ -848,7 +1366,7 @@ const AllegroDescriptionEditor = () => {
                                   </button>
                                   <img 
                                     src={section.imagePreview1} 
-                                    alt={section.image1}
+                                    alt={generateAltText(section.image1, 'Zdjęcie produktu')}
                                     style={{ 
                                       maxWidth: '100%', 
                                       maxHeight: '120px', 
@@ -859,6 +1377,9 @@ const AllegroDescriptionEditor = () => {
                                   />
                                   <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
                                     {section.image1}
+                                  </div>
+                                  <div style={{ fontSize: '10px', color: '#6b7280' }}>
+                                    Ścieżka: {generateImagePath(section.image1)}
                                   </div>
                                 </div>
                               ) : (
@@ -887,7 +1408,9 @@ const AllegroDescriptionEditor = () => {
                                   borderRadius: '8px',
                                   cursor: 'pointer',
                                   fontSize: '14px',
-                                  fontWeight: '500'
+                                  fontWeight: '500',
+                                  transition: 'all 0.2s ease',
+                                  boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
                                 }}
                               >
                                 Wybierz zdjęcie
@@ -895,42 +1418,597 @@ const AllegroDescriptionEditor = () => {
                             </div>
                           </div>
                           <div style={{ flex: '1', minWidth: '200px' }}>
-                            <div style={{ position: 'relative' }}>
-                              <div
-                                id={`editor-${section.id}`}
-                                contentEditable
-                                onInput={(e) => handleTextChange(section.id, e.target.innerHTML)}
-                                style={{
-                                  minHeight: '150px',
-                                  padding: '8px',
-                                  border: '1px solid #d1d5db',
-                                  borderRadius: '6px',
-                                  fontSize: `${section.textFormatting.fontSize}px`,
-                                  textAlign: section.textFormatting.textAlign,
-                                  outline: 'none',
-                                  backgroundColor: 'white',
-                                  direction: 'ltr',
-                                  unicodeBidi: 'embed'
-                                }}
-                                dangerouslySetInnerHTML={{ __html: section.text }}
-                              />
-                              {!section.text && (
-                                <div
-                                  style={{
-                                    position: 'absolute',
-                                    top: '8px',
-                                    left: '8px',
-                                    color: '#9ca3af',
-                                    pointerEvents: 'none',
-                                    fontSize: `${section.textFormatting.fontSize}px`,
-                                    padding: '8px'
-                                  }}
-                                >
-                                  Wprowadź tekst...
+                            <textarea
+                              value={section.text}
+                              onChange={(e) => handleTextChange(section.id, e.target.value)}
+                              placeholder="Wprowadź tekst..."
+                              style={{
+                                width: '100%',
+                                minHeight: '150px',
+                                padding: '8px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                fontSize: `${section.textFormatting.fontSize}px`,
+                                textAlign: section.textFormatting.textAlign,
+                                outline: 'none',
+                                backgroundColor: 'white',
+                                fontFamily: 'inherit',
+                                resize: 'vertical',
+                                boxSizing: 'border-box'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {section.type === 'image-right' && (
+                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                          <div style={{ flex: '1', minWidth: '200px' }}>
+                            <textarea
+                              value={section.text}
+                              onChange={(e) => handleTextChange(section.id, e.target.value)}
+                              placeholder="Wprowadź tekst..."
+                              style={{
+                                width: '100%',
+                                minHeight: '150px',
+                                padding: '8px',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '6px',
+                                fontSize: `${section.textFormatting.fontSize}px`,
+                                textAlign: section.textFormatting.textAlign,
+                                outline: 'none',
+                                backgroundColor: 'white',
+                                fontFamily: 'inherit',
+                                resize: 'vertical',
+                                boxSizing: 'border-box'
+                              }}
+                            />
+                          </div>
+                          <div style={{ flex: '1', minWidth: '200px' }}>
+                            <div style={{ 
+                              border: '2px dashed #d1d5db', 
+                              borderRadius: '15px', 
+                              padding: '16px', 
+                              textAlign: 'center',
+                              minHeight: '150px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'center'
+                            }}>
+                              {section.imagePreview1 ? (
+                                <div style={{ position: 'relative' }}>
+                                  <button
+                                    onClick={() => {
+                                      URL.revokeObjectURL(section.imagePreview1);
+                                      updateSection(section.id, 'image1', '');
+                                      updateSection(section.id, 'imagePreview1', '');
+                                    }}
+                                    style={{
+                                      position: 'absolute',
+                                      top: '0px',
+                                      right: '0px',
+                                      background: '#ef4444',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '24px',
+                                      height: '24px',
+                                      cursor: 'pointer',
+                                      fontSize: '14px',
+                                      zIndex: 10
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                  <img 
+                                    src={section.imagePreview1} 
+                                    alt={generateAltText(section.image1, 'Zdjęcie produktu')}
+                                    style={{ 
+                                      maxWidth: '100%', 
+                                      maxHeight: '120px', 
+                                      borderRadius: '8px',
+                                      marginBottom: '8px',
+                                      objectFit: 'cover'
+                                    }} 
+                                  />
+                                  <div style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                                    {section.image1}
+                                  </div>
+                                  <div style={{ fontSize: '10px', color: '#6b7280' }}>
+                                    Ścieżka: {generateImagePath(section.image1)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div style={{ fontSize: '48px', marginBottom: '8px' }}>🖼️</div>
+                                  <p style={{ color: '#6b7280', margin: 0 }}>Kliknij aby dodać zdjęcie</p>
                                 </div>
                               )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleImageUpload(section.id, 'image1', e)}
+                                style={{ display: 'none' }}
+                                ref={(el) => {
+                                  if (el) fileInputRefs.current[`${section.id}-image1`] = el;
+                                }}
+                              />
+                              <button
+                                onClick={() => fileInputRefs.current[`${section.id}-image1`]?.click()}
+                                style={{
+                                  marginTop: '8px',
+                                  padding: '8px 16px',
+                                  backgroundColor: '#f87171',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: '500',
+                                  transition: 'all 0.2s ease',
+                                  boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
+                                }}
+                              >
+                                Wybierz zdjęcie
+                              </button>
                             </div>
                           </div>
+                        </div>
+                      )}
+                      
+                      {section.type === 'image-only' && (
+                        <div style={{ 
+                          border: '2px dashed #d1d5db', 
+                          borderRadius: '15px', 
+                          padding: '16px', 
+                          textAlign: 'center',
+                          minHeight: '200px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'center'
+                        }}>
+                          {section.imagePreview1 ? (
+                            <div style={{ position: 'relative' }}>
+                              <button
+                                onClick={() => {
+                                  URL.revokeObjectURL(section.imagePreview1);
+                                  updateSection(section.id, 'image1', '');
+                                  updateSection(section.id, 'imagePreview1', '');
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  top: '0px',
+                                  right: '0px',
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '24px',
+                                  height: '24px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  zIndex: 10
+                                }}
+                              >
+                                ×
+                              </button>
+                              <img 
+                                src={section.imagePreview1} 
+                                alt={generateAltText(section.image1, 'Zdjęcie produktu')}
+                                style={{ 
+                                  maxWidth: '100%', 
+                                  maxHeight: '160px', 
+                                  borderRadius: '8px',
+                                  marginBottom: '8px',
+                                  objectFit: 'cover'
+                                }} 
+                              />
+                              <div style={{ fontSize: '14px', color: '#374151', marginBottom: '4px' }}>
+                                {section.image1}
+                              </div>
+                              <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                Ścieżka: {generateImagePath(section.image1)}
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <div style={{ fontSize: '64px', marginBottom: '8px' }}>📸</div>
+                              <p style={{ color: '#6b7280', margin: 0 }}>Kliknij aby dodać zdjęcie</p>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(section.id, 'image1', e)}
+                            style={{ display: 'none' }}
+                            ref={(el) => {
+                              if (el) fileInputRefs.current[`${section.id}-image1`] = el;
+                            }}
+                          />
+                          <button
+                            onClick={() => fileInputRefs.current[`${section.id}-image1`]?.click()}
+                            style={{
+                              marginTop: '8px',
+                              padding: '8px 16px',
+                              backgroundColor: '#3b82f6',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '14px'
+                            }}
+                          >
+                            Wybierz zdjęcie
+                          </button>
+                        </div>
+                      )}
+                      
+                      {section.type === 'two-images' && (
+                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                          <div style={{ flex: '1', minWidth: '200px' }}>
+                            <div style={{ 
+                              border: '2px dashed #d1d5db', 
+                              borderRadius: '15px', 
+                              padding: '16px', 
+                              textAlign: 'center',
+                              minHeight: '150px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'center'
+                            }}>
+                              {section.imagePreview1 ? (
+                                <div style={{ position: 'relative' }}>
+                                  <button
+                                    onClick={() => {
+                                      URL.revokeObjectURL(section.imagePreview1);
+                                      updateSection(section.id, 'image1', '');
+                                      updateSection(section.id, 'imagePreview1', '');
+                                    }}
+                                    style={{
+                                      position: 'absolute',
+                                      top: '0px',
+                                      right: '0px',
+                                      background: '#ef4444',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '20px',
+                                      height: '20px',
+                                      cursor: 'pointer',
+                                      fontSize: '12px',
+                                      zIndex: 10
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                  <img 
+                                    src={section.imagePreview1} 
+                                    alt={generateAltText(section.image1, 'Zdjęcie produktu 1')}
+                                    style={{ 
+                                      maxWidth: '100%', 
+                                      maxHeight: '100px', 
+                                      borderRadius: '8px',
+                                      marginBottom: '4px',
+                                      objectFit: 'cover'
+                                    }} 
+                                  />
+                                  <div style={{ fontSize: '11px', color: '#374151', marginBottom: '2px' }}>
+                                    {section.image1}
+                                  </div>
+                                  <div style={{ fontSize: '9px', color: '#6b7280' }}>
+                                    {generateImagePath(section.image1)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div style={{ fontSize: '32px', marginBottom: '4px' }}>🖼️</div>
+                                  <p style={{ color: '#6b7280', margin: 0, fontSize: '14px' }}>Zdjęcie 1</p>
+                                </div>
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleImageUpload(section.id, 'image1', e)}
+                                style={{ display: 'none' }}
+                                ref={(el) => {
+                                  if (el) fileInputRefs.current[`${section.id}-image1`] = el;
+                                }}
+                              />
+                              <button
+                                onClick={() => fileInputRefs.current[`${section.id}-image1`]?.click()}
+                                style={{
+                                  marginTop: '8px',
+                                  padding: '6px 12px',
+                                  backgroundColor: '#f87171',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  fontWeight: '500',
+                                  transition: 'all 0.2s ease'
+                                }}
+                              >
+                                Wybierz
+                              </button>
+                            </div>
+                          </div>
+                          <div style={{ flex: '1', minWidth: '200px' }}>
+                            <div style={{ 
+                              border: '2px dashed #d1d5db', 
+                              borderRadius: '15px', 
+                              padding: '16px', 
+                              textAlign: 'center',
+                              minHeight: '150px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'center'
+                            }}>
+                              {section.imagePreview2 ? (
+                                <div style={{ position: 'relative' }}>
+                                  <button
+                                    onClick={() => {
+                                      URL.revokeObjectURL(section.imagePreview2);
+                                      updateSection(section.id, 'image2', '');
+                                      updateSection(section.id, 'imagePreview2', '');
+                                    }}
+                                    style={{
+                                      position: 'absolute',
+                                      top: '0px',
+                                      right: '0px',
+                                      background: '#ef4444',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '20px',
+                                      height: '20px',
+                                      cursor: 'pointer',
+                                      fontSize: '12px',
+                                      zIndex: 10
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                  <img 
+                                    src={section.imagePreview2} 
+                                    alt={generateAltText(section.image2, 'Zdjęcie produktu 2')}
+                                    style={{ 
+                                      maxWidth: '100%', 
+                                      maxHeight: '100px', 
+                                      borderRadius: '8px',
+                                      marginBottom: '4px',
+                                      objectFit: 'cover'
+                                    }} 
+                                  />
+                                  <div style={{ fontSize: '11px', color: '#374151', marginBottom: '2px' }}>
+                                    {section.image2}
+                                  </div>
+                                  <div style={{ fontSize: '9px', color: '#6b7280' }}>
+                                    {generateImagePath(section.image2)}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div>
+                                  <div style={{ fontSize: '32px', marginBottom: '4px' }}>🖼️</div>
+                                  <p style={{ color: '#6b7280', margin: 0, fontSize: '14px' }}>Zdjęcie 2</p>
+                                </div>
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleImageUpload(section.id, 'image2', e)}
+                                style={{ display: 'none' }}
+                                ref={(el) => {
+                                  if (el) fileInputRefs.current[`${section.id}-image2`] = el;
+                                }}
+                              />
+                              <button
+                                onClick={() => fileInputRefs.current[`${section.id}-image2`]?.click()}
+                                style={{
+                                  marginTop: '8px',
+                                  padding: '6px 12px',
+                                  backgroundColor: '#f87171',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontSize: '12px',
+                                  fontWeight: '500',
+                                  transition: 'all 0.2s ease'
+                                }}
+                              >
+                                Wybierz
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {section.type === 'icons-grid' && (
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ 
+                            display: 'flex', 
+                            flexWrap: 'wrap', 
+                            justifyContent: 'center',
+                            gap: '20px',
+                            marginBottom: '20px'
+                          }}>
+                            {section.icons.map((icon, iconIndex) => (
+                              <div key={icon.id} style={{ 
+                                width: '200px', 
+                                padding: '15px',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '10px',
+                                backgroundColor: 'white',
+                                position: 'relative'
+                              }}>
+                                <button
+                                  onClick={() => removeIconFromGrid(section.id, iconIndex)}
+                                  style={{
+                                    position: 'absolute',
+                                    top: '5px',
+                                    right: '5px',
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '20px',
+                                    height: '20px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  ×
+                                </button>
+                                
+                                {/* Ikona lub zdjęcie */}
+                                <div style={{ marginBottom: '10px', position: 'relative' }}>
+                                  {icon.imagePreview ? (
+                                    <div style={{ position: 'relative' }}>
+                                      <img 
+                                        src={icon.imagePreview} 
+                                        alt={generateAltText(icon.image, icon.title)}
+                                        style={{ 
+                                          width: '60px', 
+                                          height: '60px', 
+                                          objectFit: 'cover', 
+                                          borderRadius: '8px',
+                                          margin: '0 auto',
+                                          display: 'block'
+                                        }} 
+                                      />
+                                      <button
+                                        onClick={() => removeIconImage(section.id, iconIndex)}
+                                        style={{
+                                          position: 'absolute',
+                                          top: '-5px',
+                                          right: 'calc(50% - 35px)',
+                                          background: '#ef4444',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: '50%',
+                                          width: '16px',
+                                          height: '16px',
+                                          cursor: 'pointer',
+                                          fontSize: '10px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center'
+                                        }}
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      value={icon.icon}
+                                      onChange={(e) => updateIconsGrid(section.id, iconIndex, 'icon', e.target.value)}
+                                      style={{
+                                        fontSize: '48px',
+                                        border: 'none',
+                                        textAlign: 'center',
+                                        width: '100%',
+                                        background: 'transparent',
+                                        outline: 'none'
+                                      }}
+                                      placeholder="📌"
+                                    />
+                                  )}
+                                </div>
+
+                                {/* Przycisk dodania zdjęcia */}
+                                <div style={{ marginBottom: '10px' }}>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleIconImageUpload(section.id, iconIndex, e)}
+                                    style={{ display: 'none' }}
+                                    ref={(el) => {
+                                      if (el) fileInputRefs.current[`${section.id}-icon-${iconIndex}`] = el;
+                                    }}
+                                  />
+                                  <button
+                                    onClick={() => fileInputRefs.current[`${section.id}-icon-${iconIndex}`]?.click()}
+                                    style={{
+                                      padding: '4px 8px',
+                                      backgroundColor: icon.imagePreview ? '#6b7280' : '#10b981',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      cursor: 'pointer',
+                                      fontSize: '10px',
+                                      fontWeight: '500',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                  >
+                                    {icon.imagePreview ? '🔄 Zmień zdjęcie' : '📸 Dodaj zdjęcie'}
+                                  </button>
+                                </div>
+                                
+                                <input
+                                  type="text"
+                                  value={icon.title}
+                                  onChange={(e) => updateIconsGrid(section.id, iconIndex, 'title', e.target.value)}
+                                  style={{
+                                    width: '100%',
+                                    padding: '5px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    fontWeight: 'bold',
+                                    textAlign: 'center',
+                                    marginBottom: '5px',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                  placeholder="Tytuł"
+                                />
+                                
+                                <textarea
+                                  value={icon.description}
+                                  onChange={(e) => updateIconsGrid(section.id, iconIndex, 'description', e.target.value)}
+                                  style={{
+                                    width: '100%',
+                                    padding: '5px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    resize: 'vertical',
+                                    minHeight: '60px',
+                                    fontSize: '12px',
+                                    boxSizing: 'border-box'
+                                  }}
+                                  placeholder="Opis funkcji"
+                                />
+
+                                {icon.image && (
+                                  <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '4px' }}>
+                                    Ścieżka: {generateImagePath(icon.image)}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <button
+                            onClick={() => addIconToGrid(section.id)}
+                            style={{
+                              padding: '10px 20px',
+                              backgroundColor: '#f87171',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              transition: 'all 0.2s ease',
+                              boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
+                            }}
+                          >
+                            + Dodaj ikonę
+                          </button>
                         </div>
                       )}
                     </div>
@@ -939,7 +2017,6 @@ const AllegroDescriptionEditor = () => {
               </div>
             )}
 
-            {/* Eksport */}
             {sections.length > 0 && (
               <div style={{ marginTop: '32px', borderTop: '1px solid #e5e7eb', paddingTop: '24px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -958,7 +2035,9 @@ const AllegroDescriptionEditor = () => {
                         borderRadius: '8px',
                         cursor: 'pointer',
                         fontSize: '14px',
-                        fontWeight: '500'
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(107, 114, 128, 0.2)'
                       }}
                     >
                       👁️ {showPreview ? 'Ukryj podgląd' : 'Pokaż podgląd'}
@@ -976,17 +2055,39 @@ const AllegroDescriptionEditor = () => {
                         borderRadius: '8px',
                         cursor: 'pointer',
                         fontSize: '14px',
-                        fontWeight: '500'
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
                       }}
                     >
                       📋 Skopiuj HTML
+                    </button>
+                    <button
+                      onClick={downloadHTML}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 16px',
+                        backgroundColor: '#f87171',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
+                      }}
+                    >
+                      💾 Pobierz HTML
                     </button>
                   </div>
                 </div>
 
                 {showPreview && (
                   <div style={{ marginTop: '16px' }}>
-                    <h4 style={{ fontWeight: '500', marginBottom: '8px' }}>Podgląd:</h4>
+                    <h4 style={{ fontWeight: '500', marginBottom: '8px' }}>Podgląd na żywo:</h4>
                     <div 
                       style={{ 
                         border: '1px solid #d1d5db', 
@@ -994,10 +2095,10 @@ const AllegroDescriptionEditor = () => {
                         padding: '16px', 
                         backgroundColor: 'white' 
                       }}
-                      dangerouslySetInnerHTML={{ __html: generateHTML() }} 
+                      dangerouslySetInnerHTML={{ __html: generatePreviewHTML() }} 
                     />
                     
-                    <h4 style={{ fontWeight: '500', marginBottom: '8px', marginTop: '16px' }}>Kod HTML:</h4>
+                    <h4 style={{ fontWeight: '500', marginBottom: '8px', marginTop: '16px' }}>Kod HTML (z właściwymi ścieżkami):</h4>
                     <textarea
                       readOnly
                       value={generateHTML()}
