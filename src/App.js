@@ -225,6 +225,52 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         <div style={{ width: '1px', backgroundColor: '#d1d5db', margin: '0 4px' }}></div>
         <button
           type="button"
+          onClick={() => insertTag('<div style="text-align: left">', '</div>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+          title="Wyrównaj do lewej"
+        >
+          ⬅️
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTag('<div style="text-align: center">', '</div>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+          title="Wyrównaj na środek"
+        >
+          ⬌
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTag('<div style="text-align: right">', '</div>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+          title="Wyrównaj do prawej"
+        >
+          ➡️
+        </button>
+        <div style={{ width: '1px', backgroundColor: '#d1d5db', margin: '0 4px' }}></div>
+        <button
+          type="button"
           onClick={() => insertTag('<br>')}
           style={{
             padding: '4px 8px',
