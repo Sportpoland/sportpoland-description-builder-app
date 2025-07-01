@@ -772,6 +772,10 @@ const AllegroDescriptionEditor = () => {
         max-width: 250px;
       }
       
+      .sp-image-container {
+        text-align: center;
+      }
+      
       .sp-image-only {
         width: 100%;
         height: auto;
@@ -797,52 +801,48 @@ const AllegroDescriptionEditor = () => {
       .sp-features-grid {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 15px;
+        gap: 20px;
         text-align: left;
       }
       
       .sp-feature-item {
         display: flex;
         align-items: flex-start;
-        gap: 15px;
-        padding: 15px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        gap: 20px;
+        padding: 20px;
       }
       
       .sp-feature-icon {
-        font-size: 40px;
+        font-size: 50px;
         flex-shrink: 0;
-        width: 60px;
-        height: 60px;
+        width: 80px;
+        height: 80px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f3f4f6;
-        border-radius: 8px;
+        border-radius: 10px;
       }
       
       .sp-feature-image {
-        width: 60px;
-        height: 60px;
+        width: 80px;
+        height: 80px;
         object-fit: cover;
-        border-radius: 8px;
+        border-radius: 10px;
         flex-shrink: 0;
       }
       
       .sp-feature-content h4 {
-        margin: 0 0 8px 0;
-        font-size: 16px;
+        margin: 0 0 10px 0;
+        font-size: 18px;
         font-weight: bold;
         color: #1f2937;
       }
       
       .sp-feature-content p {
         margin: 0;
-        font-size: 14px;
+        font-size: 16px;
         color: #6b7280;
-        line-height: 1.4;
+        line-height: 1.5;
       }
       
       .sp-icon-item {
@@ -935,25 +935,32 @@ const AllegroDescriptionEditor = () => {
         
         .sp-features-grid {
           grid-template-columns: 1fr 1fr;
+          gap: 25px;
+        }
+        
+        .sp-feature-item {
+          padding: 25px;
+          gap: 25px;
         }
         
         .sp-feature-icon {
-          font-size: 48px;
-          width: 70px;
-          height: 70px;
+          font-size: 60px;
+          width: 100px;
+          height: 100px;
         }
         
         .sp-feature-image {
-          width: 70px;
-          height: 70px;
+          width: 100px;
+          height: 100px;
         }
         
         .sp-feature-content h4 {
-          font-size: 18px;
+          font-size: 20px;
+          margin-bottom: 12px;
         }
         
         .sp-feature-content p {
-          font-size: 15px;
+          font-size: 17px;
         }
       }
       
@@ -969,6 +976,34 @@ const AllegroDescriptionEditor = () => {
         .sp-icon-item {
           min-width: 200px;
           max-width: 220px;
+        }
+        
+        .sp-features-grid {
+          gap: 30px;
+        }
+        
+        .sp-feature-item {
+          padding: 30px;
+          gap: 30px;
+        }
+        
+        .sp-feature-icon {
+          font-size: 70px;
+          width: 120px;
+          height: 120px;
+        }
+        
+        .sp-feature-image {
+          width: 120px;
+          height: 120px;
+        }
+        
+        .sp-feature-content h4 {
+          font-size: 22px;
+        }
+        
+        .sp-feature-content p {
+          font-size: 18px;
         }
       }
     </style>`;
@@ -987,7 +1022,7 @@ const AllegroDescriptionEditor = () => {
           const altLeft = generateAltText(section.image1, 'Zdjęcie produktu');
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-flex">
-              <div>
+              <div class="sp-image-container">
                 ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image" alt="${altLeft}">` : ''}
               </div>
               <div>
@@ -1001,7 +1036,7 @@ const AllegroDescriptionEditor = () => {
           const altRight = generateAltText(section.image1, 'Zdjęcie produktu');
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-flex reverse">
-              <div>
+              <div class="sp-image-container">
                 ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image" alt="${altRight}">` : ''}
               </div>
               <div>
@@ -1112,6 +1147,10 @@ const AllegroDescriptionEditor = () => {
         max-width: 250px;
       }
       
+      .sp-image-container {
+        text-align: center;
+      }
+      
       .sp-image-only {
         width: 100%;
         height: auto;
@@ -1137,52 +1176,48 @@ const AllegroDescriptionEditor = () => {
       .sp-features-grid {
         display: grid;
         grid-template-columns: 1fr;
-        gap: 15px;
+        gap: 20px;
         text-align: left;
       }
       
       .sp-feature-item {
         display: flex;
         align-items: flex-start;
-        gap: 15px;
-        padding: 15px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        gap: 20px;
+        padding: 20px;
       }
       
       .sp-feature-icon {
-        font-size: 40px;
+        font-size: 50px;
         flex-shrink: 0;
-        width: 60px;
-        height: 60px;
+        width: 80px;
+        height: 80px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f3f4f6;
-        border-radius: 8px;
+        border-radius: 10px;
       }
       
       .sp-feature-image {
-        width: 60px;
-        height: 60px;
+        width: 80px;
+        height: 80px;
         object-fit: cover;
-        border-radius: 8px;
+        border-radius: 10px;
         flex-shrink: 0;
       }
       
       .sp-feature-content h4 {
-        margin: 0 0 8px 0;
-        font-size: 16px;
+        margin: 0 0 10px 0;
+        font-size: 18px;
         font-weight: bold;
         color: #1f2937;
       }
       
       .sp-feature-content p {
         margin: 0;
-        font-size: 14px;
+        font-size: 16px;
         color: #6b7280;
-        line-height: 1.4;
+        line-height: 1.5;
       }
       
       .sp-icon-item {
@@ -1275,25 +1310,32 @@ const AllegroDescriptionEditor = () => {
         
         .sp-features-grid {
           grid-template-columns: 1fr 1fr;
+          gap: 25px;
+        }
+        
+        .sp-feature-item {
+          padding: 25px;
+          gap: 25px;
         }
         
         .sp-feature-icon {
-          font-size: 48px;
-          width: 70px;
-          height: 70px;
+          font-size: 60px;
+          width: 100px;
+          height: 100px;
         }
         
         .sp-feature-image {
-          width: 70px;
-          height: 70px;
+          width: 100px;
+          height: 100px;
         }
         
         .sp-feature-content h4 {
-          font-size: 18px;
+          font-size: 20px;
+          margin-bottom: 12px;
         }
         
         .sp-feature-content p {
-          font-size: 15px;
+          font-size: 17px;
         }
       }
       
@@ -1309,6 +1351,34 @@ const AllegroDescriptionEditor = () => {
         .sp-icon-item {
           min-width: 200px;
           max-width: 220px;
+        }
+        
+        .sp-features-grid {
+          gap: 30px;
+        }
+        
+        .sp-feature-item {
+          padding: 30px;
+          gap: 30px;
+        }
+        
+        .sp-feature-icon {
+          font-size: 70px;
+          width: 120px;
+          height: 120px;
+        }
+        
+        .sp-feature-image {
+          width: 120px;
+          height: 120px;
+        }
+        
+        .sp-feature-content h4 {
+          font-size: 22px;
+        }
+        
+        .sp-feature-content p {
+          font-size: 18px;
         }
       }
     </style>`;
@@ -1327,7 +1397,7 @@ const AllegroDescriptionEditor = () => {
           const altLeft = generateAltText(section.image1, 'Zdjęcie produktu');
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-flex">
-              <div>
+              <div class="sp-image-container">
                 ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="${altLeft}">` : ''}
               </div>
               <div>
@@ -1341,7 +1411,7 @@ const AllegroDescriptionEditor = () => {
           const altRight = generateAltText(section.image1, 'Zdjęcie produktu');
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-flex reverse">
-              <div>
+              <div class="sp-image-container">
                 ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="${altRight}">` : ''}
               </div>
               <div>
@@ -2552,9 +2622,6 @@ const AllegroDescriptionEditor = () => {
                                 alignItems: 'flex-start',
                                 gap: '15px',
                                 padding: '15px',
-                                border: '1px solid #e5e7eb',
-                                borderRadius: '10px',
-                                backgroundColor: 'white',
                                 position: 'relative'
                               }}>
                                 <button
@@ -2626,7 +2693,6 @@ const AllegroDescriptionEditor = () => {
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      backgroundColor: '#f3f4f6',
                                       borderRadius: '8px',
                                       position: 'relative'
                                     }}>
