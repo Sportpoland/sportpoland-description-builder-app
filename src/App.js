@@ -1,4 +1,295 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+
+// Optymalizowany edytor tekstu z React.memo
+const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź tekst..." }) => {
+  const textareaRef = useRef(null);
+
+  const insertTag = useCallback((openTag, closeTag = null) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    
+    let newText;
+    if (closeTag) {
+      newText = textarea.value.substring(0, start) + 
+               openTag + selectedText + closeTag + 
+               textarea.value.substring(end);
+    } else {
+      newText = textarea.value.substring(0, start) + 
+               openTag + 
+               textarea.value.substring(end);
+    }
+    
+    onChange(newText);
+    
+    setTimeout(() => {
+      if (closeTag && selectedText) {
+        textarea.setSelectionRange(start + openTag.length, start + openTag.length + selectedText.length);
+      } else {
+        textarea.setSelectionRange(start + openTag.length, start + openTag.length);
+      }
+      textarea.focus();
+    }, 0);
+  }, [onChange]);
+
+  const insertList = useCallback((listType) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    
+    const lines = selectedText.split('\n').filter(line => line.trim());
+    let listHtml = '';
+    
+    if (listType === 'ul') {
+      listHtml = '<ul>\n' + lines.map(line => `  <li>${line.trim()}</li>`).join('\n') + '\n</ul>';
+    } else {
+      listHtml = '<ol>\n' + lines.map(line => `  <li>${line.trim()}</li>`).join('\n') + '\n</ol>';
+    }
+    
+    if (lines.length === 0) {
+      listHtml = listType === 'ul' ? '<ul>\n  <li>Element listy</li>\n</ul>' : '<ol>\n  <li>Element listy</li>\n</ol>';
+    }
+    
+    const newText = textarea.value.substring(0, start) + listHtml + textarea.value.substring(end);
+    onChange(newText);
+    
+    setTimeout(() => {
+      textarea.focus();
+    }, 0);
+  }, [onChange]);
+
+  const handleChange = useCallback((e) => {
+    onChange(e.target.value);
+  }, [onChange]);
+
+  return (
+    <div style={{ border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white' }}>
+      {/* Panel narzędzi formatowania */}
+      <div style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap',
+        gap: '4px', 
+        padding: '8px', 
+        borderBottom: '1px solid #e5e7eb',
+        backgroundColor: '#f9fafb'
+      }}>
+        <button
+          type="button"
+          onClick={() => insertTag('<strong>', '</strong>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          }}
+          title="Pogrubienie"
+        >
+          B
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTag('<em>', '</em>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontStyle: 'italic'
+          }}
+          title="Kursywa"
+        >
+          I
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTag('<u>', '</u>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px',
+            textDecoration: 'underline'
+          }}
+          title="Podkreślenie"
+        >
+          U
+        </button>
+        <div style={{ width: '1px', backgroundColor: '#d1d5db', margin: '0 4px' }}></div>
+        <button
+          type="button"
+          onClick={() => insertTag('<h1>', '</h1>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          }}
+          title="Nagłówek H1"
+        >
+          H1
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTag('<h2>', '</h2>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          }}
+          title="Nagłówek H2"
+        >
+          H2
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTag('<h3>', '</h3>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          }}
+          title="Nagłówek H3"
+        >
+          H3
+        </button>
+        <button
+          type="button"
+          onClick={() => insertTag('<p>', '</p>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+          title="Paragraf"
+        >
+          P
+        </button>
+        <div style={{ width: '1px', backgroundColor: '#d1d5db', margin: '0 4px' }}></div>
+        <button
+          type="button"
+          onClick={() => insertList('ul')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+          title="Lista punktowana"
+        >
+          • Lista
+        </button>
+        <button
+          type="button"
+          onClick={() => insertList('ol')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+          title="Lista numerowana"
+        >
+          1. Lista
+        </button>
+        <div style={{ width: '1px', backgroundColor: '#d1d5db', margin: '0 4px' }}></div>
+        <button
+          type="button"
+          onClick={() => insertTag('<br>')}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+          title="Nowa linia"
+        >
+          ↵
+        </button>
+        <select
+          onChange={(e) => {
+            if (e.target.value) {
+              insertTag(`<span style="font-size: ${e.target.value}">`, '</span>');
+              e.target.value = '';
+            }
+          }}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+          title="Rozmiar czcionki"
+        >
+          <option value="">Rozmiar</option>
+          <option value="10px">10px</option>
+          <option value="12px">12px</option>
+          <option value="14px">14px</option>
+          <option value="16px">16px</option>
+          <option value="18px">18px</option>
+          <option value="20px">20px</option>
+          <option value="24px">24px</option>
+        </select>
+      </div>
+      
+      {/* Textarea */}
+      <textarea
+        ref={textareaRef}
+        value={value || ''}
+        onChange={handleChange}
+        placeholder={placeholder}
+        style={{
+          width: '100%',
+          minHeight: '120px',
+          padding: '12px',
+          border: 'none',
+          outline: 'none',
+          lineHeight: '1.4',
+          fontSize: '14px',
+          fontFamily: 'inherit',
+          resize: 'vertical',
+          boxSizing: 'border-box'
+        }}
+      />
+    </div>
+  );
+});
+
+TextEditor.displayName = 'TextEditor';
 
 const AllegroDescriptionEditor = () => {
   const [sections, setSections] = useState([]);
@@ -12,12 +303,11 @@ const AllegroDescriptionEditor = () => {
   const [showTemplates, setShowTemplates] = useState(false);
   const fileInputRefs = useRef({});
 
-   useEffect(() => {
-    // Wczytaj szablony przy starcie.
-    const saved = localStorage.getItem('sportpoland-templates');
-    if (saved) {
+  useEffect(() => {
+    const savedTemplatesStr = window.sessionStorage?.getItem('sportpoland-templates');
+    if (savedTemplatesStr) {
       try {
-        setTemplates(JSON.parse(saved));
+        setTemplates(JSON.parse(savedTemplatesStr));
       } catch (error) {
         console.error('Błąd wczytywania:', error);
       }
@@ -25,8 +315,9 @@ const AllegroDescriptionEditor = () => {
   }, []);
 
   useEffect(() => {
-    // Zapisuj automatycznie przy każdej zmianie
-    localStorage.setItem('sportpoland-templates', JSON.stringify(templates));
+    if (window.sessionStorage) {
+      window.sessionStorage.setItem('sportpoland-templates', JSON.stringify(templates));
+    }
   }, [templates]);
 
   const sectionTypes = [
@@ -38,8 +329,7 @@ const AllegroDescriptionEditor = () => {
     { id: 'icons-grid', name: 'Siatka ikon z opisami', icon: '⊞' }
   ];
 
-  // Funkcja do generowania automatycznych alt tekstów
-  const generateAltText = (imageName, context = '') => {
+  const generateAltText = useCallback((imageName, context = '') => {
     if (!imageName) return '';
     
     let altText = imageName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, ' ');
@@ -53,10 +343,9 @@ const AllegroDescriptionEditor = () => {
     }
     
     return altText;
-  };
+  }, [productBrand, productCode]);
 
-  // Historia dla przycisku wstecz
-  const saveToHistory = () => {
+  const saveToHistory = useCallback(() => {
     const newHistory = history.slice(0, currentStep + 1);
     newHistory.push({
       sections: JSON.parse(JSON.stringify(sections)),
@@ -65,9 +354,9 @@ const AllegroDescriptionEditor = () => {
     });
     setHistory(newHistory);
     setCurrentStep(newHistory.length - 1);
-  };
+  }, [history, currentStep, sections, productBrand, productCode]);
 
-  const goBack = () => {
+  const goBack = useCallback(() => {
     if (currentStep > 0) {
       const previousState = history[currentStep - 1];
       setSections(previousState.sections);
@@ -75,10 +364,9 @@ const AllegroDescriptionEditor = () => {
       setProductCode(previousState.productCode);
       setCurrentStep(currentStep - 1);
     }
-  };
+  }, [currentStep, history]);
 
-  // Funkcje szablonów
-  const saveTemplate = () => {
+  const saveTemplate = useCallback(() => {
     if (!templateName.trim()) {
       alert('Podaj nazwę szablonu!');
       return;
@@ -93,26 +381,26 @@ const AllegroDescriptionEditor = () => {
       createdAt: new Date().toLocaleString()
     };
     
-    setTemplates([...templates, template]);
+    setTemplates(prev => [...prev, template]);
     setTemplateName('');
     alert('Szablon został zapisany!');
-  };
+  }, [templateName, sections, productBrand, productCode]);
 
-  const loadTemplate = (template) => {
+  const loadTemplate = useCallback((template) => {
     saveToHistory();
     setSections(template.sections);
     setProductBrand(template.productBrand);
     setProductCode(template.productCode);
     alert(`Szablon "${template.name}" został wczytany!`);
-  };
+  }, [saveToHistory]);
 
-  const deleteTemplate = (templateId) => {
+  const deleteTemplate = useCallback((templateId) => {
     if (window.confirm('Czy na pewno chcesz usunąć ten szablon?')) {
-      setTemplates(templates.filter(t => t.id !== templateId));
+      setTemplates(prev => prev.filter(t => t.id !== templateId));
     }
-  };
+  }, []);
 
-  const exportTemplates = () => {
+  const exportTemplates = useCallback(() => {
     try {
       const dataStr = JSON.stringify(templates, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -128,9 +416,9 @@ const AllegroDescriptionEditor = () => {
       console.error('Błąd eksportu:', error);
       alert('Błąd eksportowania szablonów!');
     }
-  };
+  }, [templates]);
 
-  const importTemplates = (event) => {
+  const importTemplates = useCallback((event) => {
     const file = event.target.files[0];
     if (!file) return;
 
@@ -148,7 +436,7 @@ const AllegroDescriptionEditor = () => {
           createdAt: `${template.createdAt} (importowany)`
         }));
 
-        setTemplates([...templates, ...templatesWithNewIds]);
+        setTemplates(prev => [...prev, ...templatesWithNewIds]);
         alert(`Zaimportowano ${templatesWithNewIds.length} szablonów!`);
       } catch (error) {
         console.error('Błąd importu:', error);
@@ -157,9 +445,9 @@ const AllegroDescriptionEditor = () => {
     };
     reader.readAsText(file);
     event.target.value = '';
-  };
+  }, []);
 
-  const addSection = (type) => {
+  const addSection = useCallback((type) => {
     saveToHistory();
     const newSection = {
       id: Date.now(),
@@ -174,77 +462,84 @@ const AllegroDescriptionEditor = () => {
         { id: 2, icon: '⚡', title: 'Tytuł 2', description: 'Opis funkcji 2', image: '', imagePreview: '' },
         { id: 3, icon: '🔒', title: 'Tytuł 3', description: 'Opis funkcji 3', image: '', imagePreview: '' }
       ] : undefined,
-      textFormatting: {
-        fontSize: '14',
-        textAlign: 'left'
-      },
       backgroundColor: '#ffffff'
     };
-    setSections([...sections, newSection]);
-  };
+    setSections(prev => [...prev, newSection]);
+  }, [saveToHistory]);
 
-  const deleteSection = (id) => {
+  const deleteSection = useCallback((id) => {
     saveToHistory();
-    const sectionToDelete = sections.find(section => section.id === id);
-    if (sectionToDelete) {
-      if (sectionToDelete.imagePreview1) {
-        URL.revokeObjectURL(sectionToDelete.imagePreview1);
+    setSections(prev => {
+      const sectionToDelete = prev.find(section => section.id === id);
+      if (sectionToDelete) {
+        if (sectionToDelete.imagePreview1) {
+          URL.revokeObjectURL(sectionToDelete.imagePreview1);
+        }
+        if (sectionToDelete.imagePreview2) {
+          URL.revokeObjectURL(sectionToDelete.imagePreview2);
+        }
+        if (sectionToDelete.icons) {
+          sectionToDelete.icons.forEach(icon => {
+            if (icon.imagePreview) {
+              URL.revokeObjectURL(icon.imagePreview);
+            }
+          });
+        }
       }
-      if (sectionToDelete.imagePreview2) {
-        URL.revokeObjectURL(sectionToDelete.imagePreview2);
-      }
-      if (sectionToDelete.icons) {
-        sectionToDelete.icons.forEach(icon => {
-          if (icon.imagePreview) {
-            URL.revokeObjectURL(icon.imagePreview);
-          }
-        });
-      }
-    }
-    setSections(sections.filter(section => section.id !== id));
-  };
+      return prev.filter(section => section.id !== id);
+    });
+  }, [saveToHistory]);
 
-  const moveSection = (id, direction) => {
-    const currentIndex = sections.findIndex(section => section.id === id);
-    if (
-      (direction === 'up' && currentIndex === 0) ||
-      (direction === 'down' && currentIndex === sections.length - 1)
-    ) return;
+  const moveSection = useCallback((id, direction) => {
+    setSections(prev => {
+      const currentIndex = prev.findIndex(section => section.id === id);
+      if (
+        (direction === 'up' && currentIndex === 0) ||
+        (direction === 'down' && currentIndex === prev.length - 1)
+      ) return prev;
 
+      saveToHistory();
+      const newSections = [...prev];
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      [newSections[currentIndex], newSections[targetIndex]] = [newSections[targetIndex], newSections[currentIndex]];
+      return newSections;
+    });
+  }, [saveToHistory]);
+
+  const copySection = useCallback((id) => {
     saveToHistory();
-    const newSections = [...sections];
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    [newSections[currentIndex], newSections[targetIndex]] = [newSections[targetIndex], newSections[currentIndex]];
-    setSections(newSections);
-  };
+    setSections(prev => {
+      const sectionToCopy = prev.find(section => section.id === id);
+      if (sectionToCopy) {
+        const copiedSection = {
+          ...sectionToCopy,
+          id: Date.now(),
+          imagePreview1: '',
+          imagePreview2: '',
+          icons: sectionToCopy.icons ? sectionToCopy.icons.map(icon => ({
+            ...icon,
+            id: Date.now() + Math.random(),
+            imagePreview: ''
+          })) : undefined
+        };
+        return [...prev, copiedSection];
+      }
+      return prev;
+    });
+  }, [saveToHistory]);
 
-  const copySection = (id) => {
-    saveToHistory();
-    const sectionToCopy = sections.find(section => section.id === id);
-    if (sectionToCopy) {
-      const copiedSection = {
-        ...sectionToCopy,
-        id: Date.now(),
-        imagePreview1: '',
-        imagePreview2: '',
-        icons: sectionToCopy.icons ? sectionToCopy.icons.map(icon => ({
-          ...icon,
-          id: Date.now() + Math.random(),
-          imagePreview: ''
-        })) : undefined
-      };
-      setSections([...sections, copiedSection]);
-    }
-  };
-
-  const updateSection = (id, field, value) => {
-    setSections(sections.map(section => 
+  const updateSection = useCallback((id, field, value) => {
+    setSections(prev => prev.map(section => 
       section.id === id ? { ...section, [field]: value } : section
     ));
-  };
+  }, []);
 
-  const updateIconsGrid = (sectionId, iconIndex, field, value) => {
-    setSections(sections.map(section => {
+  const handleTextChange = useCallback((sectionId, value) => {
+    updateSection(sectionId, 'text', value);
+  }, [updateSection]);
+
+  const updateIconsGrid = useCallback((sectionId, iconIndex, field, value) => {
+    setSections(prev => prev.map(section => {
       if (section.id === sectionId) {
         const newIcons = [...section.icons];
         newIcons[iconIndex] = { ...newIcons[iconIndex], [field]: value };
@@ -252,10 +547,10 @@ const AllegroDescriptionEditor = () => {
       }
       return section;
     }));
-  };
+  }, []);
 
-  const addIconToGrid = (sectionId) => {
-    setSections(sections.map(section => {
+  const addIconToGrid = useCallback((sectionId) => {
+    setSections(prev => prev.map(section => {
       if (section.id === sectionId) {
         const newIcon = {
           id: Date.now(),
@@ -269,10 +564,10 @@ const AllegroDescriptionEditor = () => {
       }
       return section;
     }));
-  };
+  }, []);
 
-  const removeIconFromGrid = (sectionId, iconIndex) => {
-    setSections(sections.map(section => {
+  const removeIconFromGrid = useCallback((sectionId, iconIndex) => {
+    setSections(prev => prev.map(section => {
       if (section.id === sectionId) {
         const iconToRemove = section.icons[iconIndex];
         if (iconToRemove && iconToRemove.imagePreview) {
@@ -283,98 +578,75 @@ const AllegroDescriptionEditor = () => {
       }
       return section;
     }));
-  };
+  }, []);
 
-  const updateTextFormatting = (id, property, value) => {
-    setSections(sections.map(section => 
-      section.id === id 
-        ? { 
-            ...section, 
-            textFormatting: { ...section.textFormatting, [property]: value }
-          } 
-        : section
-    ));
-  };
-
-  const handleIconImageUpload = (sectionId, iconIndex, event) => {
+  const handleIconImageUpload = useCallback((sectionId, iconIndex, event) => {
     const file = event.target.files[0];
     if (file) {
       const imageName = file.name;
       const imageURL = URL.createObjectURL(file);
       
-      setSections(prevSections => {
-        return prevSections.map(section => {
-          if (section.id === sectionId) {
-            const updatedIcons = section.icons.map((icon, index) => 
-              index === iconIndex 
-                ? { ...icon, image: imageName, imagePreview: imageURL }
-                : icon
-            );
-            return { ...section, icons: updatedIcons };
-          }
-          return section;
-        });
-      });
-    }
-  };
-
-  const removeIconImage = (sectionId, iconIndex) => {
-    setSections(prevSections => {
-      return prevSections.map(section => {
+      setSections(prev => prev.map(section => {
         if (section.id === sectionId) {
-          const updatedIcons = section.icons.map((icon, index) => {
-            if (index === iconIndex) {
-              if (icon.imagePreview) {
-                URL.revokeObjectURL(icon.imagePreview);
-              }
-              return { ...icon, image: '', imagePreview: '' };
-            }
-            return icon;
-          });
+          const updatedIcons = section.icons.map((icon, index) => 
+            index === iconIndex 
+              ? { ...icon, image: imageName, imagePreview: imageURL }
+              : icon
+          );
           return { ...section, icons: updatedIcons };
         }
         return section;
-      });
-    });
-  };
+      }));
+    }
+  }, []);
 
-  const handleImageUpload = (sectionId, imageField, event) => {
+  const removeIconImage = useCallback((sectionId, iconIndex) => {
+    setSections(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        const updatedIcons = section.icons.map((icon, index) => {
+          if (index === iconIndex) {
+            if (icon.imagePreview) {
+              URL.revokeObjectURL(icon.imagePreview);
+            }
+            return { ...icon, image: '', imagePreview: '' };
+          }
+          return icon;
+        });
+        return { ...section, icons: updatedIcons };
+      }
+      return section;
+    }));
+  }, []);
+
+  const handleImageUpload = useCallback((sectionId, imageField, event) => {
     const file = event.target.files[0];
     if (file) {
       const imageName = file.name;
       const imageURL = URL.createObjectURL(file);
       
-      setSections(prevSections => {
-        return prevSections.map(section => {
-          if (section.id === sectionId) {
-            const previewField = imageField === 'image1' ? 'imagePreview1' : 'imagePreview2';
-            return {
-              ...section,
-              [imageField]: imageName,
-              [previewField]: imageURL
-            };
-          }
-          return section;
-        });
-      });
+      setSections(prev => prev.map(section => {
+        if (section.id === sectionId) {
+          const previewField = imageField === 'image1' ? 'imagePreview1' : 'imagePreview2';
+          return {
+            ...section,
+            [imageField]: imageName,
+            [previewField]: imageURL
+          };
+        }
+        return section;
+      }));
     }
-  };
+  }, []);
 
-  // Uproszczona obsługa tekstu
-  const handleTextChange = (sectionId, value) => {
-    updateSection(sectionId, 'text', value);
-  };
-
-  const generateImagePath = (imageName) => {
+  const generateImagePath = useCallback((imageName) => {
     if (!imageName) return '';
     if (!productBrand || !productCode) {
       return imageName;
     }
     return `/data/include/cms/sportpoland_com/pliki-opisy/${productBrand}/${productCode}/${imageName}`;
-  };
+  }, [productBrand, productCode]);
 
-  // Funkcja do generowania HTML z podglądem na żywo
-  const generatePreviewHTML = () => {
+  const generatePreviewHTML = useCallback(() => {
     let html = `<style>
       .sp-container {
         background-color: var(--bg-color);
@@ -391,8 +663,6 @@ const AllegroDescriptionEditor = () => {
       }
       
       .sp-text {
-        font-size: var(--font-size);
-        text-align: var(--text-align);
         line-height: 1.4;
       }
       
@@ -531,12 +801,12 @@ const AllegroDescriptionEditor = () => {
     </style>`;
     
     sections.forEach(section => {
-      const cssVars = `--bg-color: ${section.backgroundColor}; --font-size: ${section.textFormatting.fontSize}px; --text-align: ${section.textFormatting.textAlign};`;
+      const cssVars = `--bg-color: ${section.backgroundColor};`;
       
       switch (section.type) {
         case 'text-only':
           html += `<div class="sp-container" style="${cssVars}">
-            <div class="sp-text">${section.text}</div>
+            <div class="sp-text">${section.text || ''}</div>
           </div>\n`;
           break;
           
@@ -548,7 +818,7 @@ const AllegroDescriptionEditor = () => {
                 ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image" alt="${altLeft}">` : ''}
               </div>
               <div>
-                <div class="sp-text">${section.text}</div>
+                <div class="sp-text">${section.text || ''}</div>
               </div>
             </div>
           </div>\n`;
@@ -562,7 +832,7 @@ const AllegroDescriptionEditor = () => {
                 ${section.imagePreview1 ? `<img src="${section.imagePreview1}" class="sp-image" alt="${altRight}">` : ''}
               </div>
               <div>
-                <div class="sp-text">${section.text}</div>
+                <div class="sp-text">${section.text || ''}</div>
               </div>
             </div>
           </div>\n`;
@@ -593,7 +863,7 @@ const AllegroDescriptionEditor = () => {
           break;
           
         case 'icons-grid':
-          const iconsHtml = section.icons.map(icon => {
+          const iconsHtml = section.icons?.map(icon => {
             const iconAlt = generateAltText(icon.image, icon.title);
             return `
             <div class="sp-icon-item">
@@ -604,7 +874,7 @@ const AllegroDescriptionEditor = () => {
               <h4 class="sp-icon-title">${icon.title}</h4>
               <p class="sp-icon-desc">${icon.description}</p>
             </div>
-          `;}).join('');
+          `;}).join('') || '';
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-icons-grid">
               ${iconsHtml}
@@ -618,10 +888,9 @@ const AllegroDescriptionEditor = () => {
     });
     
     return html;
-  };
+  }, [sections, generateAltText]);
 
-  // Funkcja do generowania finalnego HTML
-  const generateHTML = () => {
+  const generateHTML = useCallback(() => {
     let html = `<style>
       .sp-container {
         background-color: var(--bg-color);
@@ -638,8 +907,6 @@ const AllegroDescriptionEditor = () => {
       }
       
       .sp-text {
-        font-size: var(--font-size);
-        text-align: var(--text-align);
         line-height: 1.4;
       }
       
@@ -778,12 +1045,12 @@ const AllegroDescriptionEditor = () => {
     </style>`;
     
     sections.forEach(section => {
-      const cssVars = `--bg-color: ${section.backgroundColor}; --font-size: ${section.textFormatting.fontSize}px; --text-align: ${section.textFormatting.textAlign};`;
+      const cssVars = `--bg-color: ${section.backgroundColor};`;
       
       switch (section.type) {
         case 'text-only':
           html += `<div class="sp-container" style="${cssVars}">
-            <div class="sp-text">${section.text}</div>
+            <div class="sp-text">${section.text || ''}</div>
           </div>\n`;
           break;
           
@@ -795,7 +1062,7 @@ const AllegroDescriptionEditor = () => {
                 ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="${altLeft}">` : ''}
               </div>
               <div>
-                <div class="sp-text">${section.text}</div>
+                <div class="sp-text">${section.text || ''}</div>
               </div>
             </div>
           </div>\n`;
@@ -809,7 +1076,7 @@ const AllegroDescriptionEditor = () => {
                 ${section.image1 ? `<img src="${generateImagePath(section.image1)}" class="sp-image" alt="${altRight}">` : ''}
               </div>
               <div>
-                <div class="sp-text">${section.text}</div>
+                <div class="sp-text">${section.text || ''}</div>
               </div>
             </div>
           </div>\n`;
@@ -840,7 +1107,7 @@ const AllegroDescriptionEditor = () => {
           break;
           
         case 'icons-grid':
-          const iconsHtml = section.icons.map(icon => {
+          const iconsHtml = section.icons?.map(icon => {
             const iconAlt = generateAltText(icon.image, icon.title);
             return `
             <div class="sp-icon-item">
@@ -851,7 +1118,7 @@ const AllegroDescriptionEditor = () => {
               <h4 class="sp-icon-title">${icon.title}</h4>
               <p class="sp-icon-desc">${icon.description}</p>
             </div>
-          `;}).join('');
+          `;}).join('') || '';
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-icons-grid">
               ${iconsHtml}
@@ -865,9 +1132,9 @@ const AllegroDescriptionEditor = () => {
     });
     
     return html;
-  };
+  }, [sections, generateAltText, generateImagePath]);
 
-  const copyToClipboard = async () => {
+  const copyToClipboard = useCallback(async () => {
     const html = generateHTML();
     try {
       await navigator.clipboard.writeText(html);
@@ -876,9 +1143,9 @@ const AllegroDescriptionEditor = () => {
       console.error('Błąd kopiowania:', err);
       alert('Błąd kopiowania do schowka');
     }
-  };
+  }, [generateHTML]);
 
-  const downloadHTML = () => {
+  const downloadHTML = useCallback(() => {
     const html = generateHTML();
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -889,7 +1156,7 @@ const AllegroDescriptionEditor = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }, [generateHTML]);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', fontFamily: 'Arial, sans-serif' }}>
@@ -956,7 +1223,6 @@ const AllegroDescriptionEditor = () => {
             <div style={{ borderBottom: '1px solid #e5e7eb', padding: '16px', backgroundColor: '#f9fafb' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '12px' }}>Zarządzanie szablonami:</h3>
               
-              {/* Zapisywanie szablonu */}
               <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                 <h4 style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>Zapisz aktualny szablon:</h4>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -992,7 +1258,6 @@ const AllegroDescriptionEditor = () => {
                 </div>
               </div>
 
-{/* Przyciski Import/Eksport */}
               <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <h4 style={{ fontSize: '16px', fontWeight: '500', margin: 0 }}>Zarządzanie plikami szablonów:</h4>
@@ -1045,119 +1310,9 @@ const AllegroDescriptionEditor = () => {
                 </p>
               </div>
 
-              {/* Lista szablonów */}
               {templates.length > 0 && (
                 <div>
                   <h4 style={{ fontSize: '16px', fontWeight: '500', marginBottom: '8px' }}>Zapisane szablony:</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {templates.map(template => (
-                      <div key={template.id} style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        padding: '12px', 
-                        backgroundColor: 'white', 
-                        border: '1px solid #e5e7eb', 
-                        borderRadius: '6px' 
-                      }}>
-                        <div>
-                          <div style={{ fontWeight: '500', fontSize: '14px' }}>{template.name}</div>
-                          <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                            {template.sections.length} sekcji • {template.createdAt}
-                            {template.productBrand && template.productCode && 
-                              ` • ${template.productBrand}/${template.productCode}`
-                            }
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          <button
-                            onClick={() => loadTemplate(template)}
-                            style={{
-                              padding: '6px 12px',
-                              backgroundColor: '#3b82f6',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '500',
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            📂 Wczytaj
-                          </button>
-                          <button
-                            onClick={() => deleteTemplate(template.id)}
-                            style={{
-                              padding: '6px 12px',
-                              backgroundColor: '#ef4444',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              fontWeight: '500',
-                              transition: 'all 0.2s ease'
-                            }}
-                          >
-                            🗑️ Usuń
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Lista szablonów */}
-              {templates.length > 0 && (
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <h4 style={{ fontSize: '16px', fontWeight: '500', margin: 0 }}>Zapisane szablony:</h4>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <input
-                        type="file"
-                        accept=".json"
-                        onChange={importTemplates}
-                        style={{ display: 'none' }}
-                        id="import-templates"
-                      />
-                      <button
-                        onClick={() => document.getElementById('import-templates').click()}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#3b82f6',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: '500',
-                          transition: 'all 0.2s ease'
-                        }}
-                        title="Importuj szablony z pliku JSON"
-                      >
-                        📥 Import
-                      </button>
-                      <button
-                        onClick={exportTemplates}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#10b981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          fontWeight: '500',
-                          transition: 'all 0.2s ease'
-                        }}
-                        title="Eksportuj wszystkie szablony do pliku JSON"
-                      >
-                        📤 Eksport
-                      </button>
-                    </div>
-                  </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {templates.map(template => (
                       <div key={template.id} style={{ 
@@ -1422,60 +1577,16 @@ const AllegroDescriptionEditor = () => {
                       >
                         Reset
                       </button>
-                      
-                      {/* Formatowanie tekstu */}
-                      {['text-only', 'image-left', 'image-right'].includes(section.type) && (
-                        <>
-                          <select
-                            value={section.textFormatting.fontSize}
-                            onChange={(e) => updateTextFormatting(section.id, 'fontSize', e.target.value)}
-                            style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '14px' }}
-                          >
-                            <option value="12">12px</option>
-                            <option value="14">14px</option>
-                            <option value="16">16px</option>
-                            <option value="18">18px</option>
-                            <option value="20">20px</option>
-                            <option value="24">24px</option>
-                          </select>
-                          
-                          <select
-                            value={section.textFormatting.textAlign}
-                            onChange={(e) => updateTextFormatting(section.id, 'textAlign', e.target.value)}
-                            style={{ padding: '4px 8px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '14px' }}
-                          >
-                            <option value="left">Do lewej</option>
-                            <option value="center">Na środek</option>
-                            <option value="right">Do prawej</option>
-                            <option value="justify">Wyjustuj</option>
-                          </select>
-                        </>
-                      )}
                     </div>
 
                     <div style={{ backgroundColor: section.backgroundColor, padding: '16px', borderRadius: '0 0 15px 15px' }}>
                       {section.type === 'text-only' && (
-                        <div style={{ position: 'relative' }}>
-                          <textarea
-                            value={section.text}
-                            onChange={(e) => handleTextChange(section.id, e.target.value)}
-                            placeholder="Wprowadź tekst..."
-                            style={{
-                              width: '100%',
-                              minHeight: '120px',
-                              padding: '8px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '6px',
-                              fontSize: `${section.textFormatting.fontSize}px`,
-                              textAlign: section.textFormatting.textAlign,
-                              outline: 'none',
-                              backgroundColor: 'white',
-                              fontFamily: 'inherit',
-                              resize: 'vertical',
-                              boxSizing: 'border-box'
-                            }}
-                          />
-                        </div>
+                        <TextEditor
+                          sectionId={section.id}
+                          value={section.text}
+                          onChange={(value) => handleTextChange(section.id, value)}
+                          placeholder="Wprowadź tekst..."
+                        />
                       )}
                       
                       {section.type === 'image-left' && (
@@ -1570,24 +1681,11 @@ const AllegroDescriptionEditor = () => {
                             </div>
                           </div>
                           <div style={{ flex: '1', minWidth: '200px' }}>
-                            <textarea
+                            <TextEditor
+                              sectionId={section.id}
                               value={section.text}
-                              onChange={(e) => handleTextChange(section.id, e.target.value)}
+                              onChange={(value) => handleTextChange(section.id, value)}
                               placeholder="Wprowadź tekst..."
-                              style={{
-                                width: '100%',
-                                minHeight: '150px',
-                                padding: '8px',
-                                border: '1px solid #d1d5db',
-                                borderRadius: '6px',
-                                fontSize: `${section.textFormatting.fontSize}px`,
-                                textAlign: section.textFormatting.textAlign,
-                                outline: 'none',
-                                backgroundColor: 'white',
-                                fontFamily: 'inherit',
-                                resize: 'vertical',
-                                boxSizing: 'border-box'
-                              }}
                             />
                           </div>
                         </div>
@@ -1596,24 +1694,11 @@ const AllegroDescriptionEditor = () => {
                       {section.type === 'image-right' && (
                         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                           <div style={{ flex: '1', minWidth: '200px' }}>
-                            <textarea
+                            <TextEditor
+                              sectionId={section.id}
                               value={section.text}
-                              onChange={(e) => handleTextChange(section.id, e.target.value)}
+                              onChange={(value) => handleTextChange(section.id, value)}
                               placeholder="Wprowadź tekst..."
-                              style={{
-                                width: '100%',
-                                minHeight: '150px',
-                                padding: '8px',
-                                border: '1px solid #d1d5db',
-                                borderRadius: '6px',
-                                fontSize: `${section.textFormatting.fontSize}px`,
-                                textAlign: section.textFormatting.textAlign,
-                                outline: 'none',
-                                backgroundColor: 'white',
-                                fontFamily: 'inherit',
-                                resize: 'vertical',
-                                boxSizing: 'border-box'
-                              }}
                             />
                           </div>
                           <div style={{ flex: '1', minWidth: '200px' }}>
@@ -1985,7 +2070,7 @@ const AllegroDescriptionEditor = () => {
                             gap: '20px',
                             marginBottom: '20px'
                           }}>
-                            {section.icons.map((icon, iconIndex) => (
+                            {section.icons?.map((icon, iconIndex) => (
                               <div key={icon.id} style={{ 
                                 width: '200px', 
                                 padding: '15px',
@@ -2016,7 +2101,6 @@ const AllegroDescriptionEditor = () => {
                                   ×
                                 </button>
                                 
-                                {/* Ikona lub zdjęcie */}
                                 <div style={{ marginBottom: '10px', position: 'relative' }}>
                                   {icon.imagePreview ? (
                                     <div style={{ position: 'relative' }}>
@@ -2072,7 +2156,6 @@ const AllegroDescriptionEditor = () => {
                                   )}
                                 </div>
 
-                                {/* Przycisk dodania zdjęcia */}
                                 <div style={{ marginBottom: '10px' }}>
                                   <input
                                     type="file"
