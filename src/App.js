@@ -326,7 +326,8 @@ const AllegroDescriptionEditor = () => {
     { id: 'image-right', name: 'Zdjęcie po prawej, tekst po lewej', icon: '🖼️' },
     { id: 'image-only', name: 'Samo zdjęcie', icon: '📸' },
     { id: 'two-images', name: 'Dwa zdjęcia obok siebie', icon: '🖼️' },
-    { id: 'icons-grid', name: 'Siatka ikon z opisami', icon: '⊞' }
+    { id: 'icons-grid', name: 'Siatka ikon z opisami', icon: '⊞' },
+    { id: 'features-grid', name: 'Funkcje produktu 2x2', icon: '🔲' }
   ];
 
   const generateAltText = useCallback((imageName, context = '') => {
@@ -462,6 +463,12 @@ const AllegroDescriptionEditor = () => {
         { id: 2, icon: '⚡', title: 'Tytuł 2', description: 'Opis funkcji 2', image: '', imagePreview: '' },
         { id: 3, icon: '🔒', title: 'Tytuł 3', description: 'Opis funkcji 3', image: '', imagePreview: '' }
       ] : undefined,
+      features: type === 'features-grid' ? [
+        { id: 1, icon: '🔇', title: 'Cisza podczas treningu', description: 'cichy silnik pozwala ćwiczyć o dowolnej porze – bez zakłócania spokoju domowników.' },
+        { id: 2, icon: '📦', title: 'Oszczędność miejsca i mobilność', description: 'po złożeniu zajmuje niewiele miejsca, a dzięki rolkom łatwo ją przestawić w inne miejsce.' },
+        { id: 3, icon: '🎯', title: 'Trening dopasowany do Twoich możliwości', description: 'regulacja prędkości i nachylenia pozwala dostosować intensywność biegu – od spaceru po intensywny trening interwałowy.' },
+        { id: 4, icon: '🦶', title: 'Komfort i bezpieczeństwo', description: 'system amortyzacji zmniejsza obciążenie stawów, co pozwala ćwiczyć częściej i dłużej bez ryzyka przeciążeń.' }
+      ] : undefined,
       backgroundColor: '#ffffff'
     };
     setSections(prev => [...prev, newSection]);
@@ -482,6 +489,13 @@ const AllegroDescriptionEditor = () => {
           sectionToDelete.icons.forEach(icon => {
             if (icon.imagePreview) {
               URL.revokeObjectURL(icon.imagePreview);
+            }
+          });
+        }
+        if (sectionToDelete.features) {
+          sectionToDelete.features.forEach(feature => {
+            if (feature.imagePreview) {
+              URL.revokeObjectURL(feature.imagePreview);
             }
           });
         }
@@ -520,6 +534,11 @@ const AllegroDescriptionEditor = () => {
             ...icon,
             id: Date.now() + Math.random(),
             imagePreview: ''
+          })) : undefined,
+          features: sectionToCopy.features ? sectionToCopy.features.map(feature => ({
+            ...feature,
+            id: Date.now() + Math.random(),
+            imagePreview: ''
           })) : undefined
         };
         return [...prev, copiedSection];
@@ -537,6 +556,86 @@ const AllegroDescriptionEditor = () => {
   const handleTextChange = useCallback((sectionId, value) => {
     updateSection(sectionId, 'text', value);
   }, [updateSection]);
+
+  const updateFeaturesGrid = useCallback((sectionId, featureIndex, field, value) => {
+    setSections(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        const newFeatures = [...section.features];
+        newFeatures[featureIndex] = { ...newFeatures[featureIndex], [field]: value };
+        return { ...section, features: newFeatures };
+      }
+      return section;
+    }));
+  }, []);
+
+  const addFeatureToGrid = useCallback((sectionId) => {
+    setSections(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        const newFeature = {
+          id: Date.now(),
+          icon: '📌',
+          title: 'Nowa funkcja',
+          description: 'Opis nowej funkcji',
+          image: '',
+          imagePreview: ''
+        };
+        return { ...section, features: [...section.features, newFeature] };
+      }
+      return section;
+    }));
+  }, []);
+
+  const removeFeatureFromGrid = useCallback((sectionId, featureIndex) => {
+    setSections(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        const featureToRemove = section.features[featureIndex];
+        if (featureToRemove && featureToRemove.imagePreview) {
+          URL.revokeObjectURL(featureToRemove.imagePreview);
+        }
+        const newFeatures = section.features.filter((_, index) => index !== featureIndex);
+        return { ...section, features: newFeatures };
+      }
+      return section;
+    }));
+  }, []);
+
+  const handleFeatureImageUpload = useCallback((sectionId, featureIndex, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const imageName = file.name;
+      const imageURL = URL.createObjectURL(file);
+      
+      setSections(prev => prev.map(section => {
+        if (section.id === sectionId) {
+          const updatedFeatures = section.features.map((feature, index) => 
+            index === featureIndex 
+              ? { ...feature, image: imageName, imagePreview: imageURL }
+              : feature
+          );
+          return { ...section, features: updatedFeatures };
+        }
+        return section;
+      }));
+    }
+  }, []);
+
+  const removeFeatureImage = useCallback((sectionId, featureIndex) => {
+    setSections(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        const updatedFeatures = section.features.map((feature, index) => {
+          if (index === featureIndex) {
+            if (feature.imagePreview) {
+              URL.revokeObjectURL(feature.imagePreview);
+            }
+            return { ...feature, image: '', imagePreview: '' };
+          }
+          return feature;
+        });
+        return { ...section, features: updatedFeatures };
+      }
+      return section;
+    }));
+  }, []);
 
   const updateIconsGrid = useCallback((sectionId, iconIndex, field, value) => {
     setSections(prev => prev.map(section => {
@@ -695,6 +794,57 @@ const AllegroDescriptionEditor = () => {
         text-align: center;
       }
       
+      .sp-features-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+        text-align: left;
+      }
+      
+      .sp-feature-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      .sp-feature-icon {
+        font-size: 40px;
+        flex-shrink: 0;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f3f4f6;
+        border-radius: 8px;
+      }
+      
+      .sp-feature-image {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        flex-shrink: 0;
+      }
+      
+      .sp-feature-content h4 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        font-weight: bold;
+        color: #1f2937;
+      }
+      
+      .sp-feature-content p {
+        margin: 0;
+        font-size: 14px;
+        color: #6b7280;
+        line-height: 1.4;
+      }
+      
       .sp-icon-item {
         width: 100%;
         max-width: 180px;
@@ -781,6 +931,29 @@ const AllegroDescriptionEditor = () => {
         
         .sp-icon-desc {
           font-size: 14px;
+        }
+        
+        .sp-features-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        
+        .sp-feature-icon {
+          font-size: 48px;
+          width: 70px;
+          height: 70px;
+        }
+        
+        .sp-feature-image {
+          width: 70px;
+          height: 70px;
+        }
+        
+        .sp-feature-content h4 {
+          font-size: 18px;
+        }
+        
+        .sp-feature-content p {
+          font-size: 15px;
         }
       }
       
@@ -882,6 +1055,28 @@ const AllegroDescriptionEditor = () => {
           </div>\n`;
           break;
           
+        case 'features-grid':
+          const featuresHtml = section.features?.map(feature => {
+            const featureAlt = generateAltText(feature.image, feature.title);
+            return `
+            <div class="sp-feature-item">
+              ${feature.imagePreview 
+                ? `<img src="${feature.imagePreview}" class="sp-feature-image" alt="${featureAlt}">`
+                : `<div class="sp-feature-icon">${feature.icon}</div>`
+              }
+              <div class="sp-feature-content">
+                <h4>${feature.title}</h4>
+                <p>${feature.description}</p>
+              </div>
+            </div>
+          `;}).join('') || '';
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-features-grid">
+              ${featuresHtml}
+            </div>
+          </div>\n`;
+          break;
+          
         default:
           break;
       }
@@ -937,6 +1132,57 @@ const AllegroDescriptionEditor = () => {
         justify-content: center;
         gap: 15px;
         text-align: center;
+      }
+      
+      .sp-features-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 15px;
+        text-align: left;
+      }
+      
+      .sp-feature-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      .sp-feature-icon {
+        font-size: 40px;
+        flex-shrink: 0;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f3f4f6;
+        border-radius: 8px;
+      }
+      
+      .sp-feature-image {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+        flex-shrink: 0;
+      }
+      
+      .sp-feature-content h4 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        font-weight: bold;
+        color: #1f2937;
+      }
+      
+      .sp-feature-content p {
+        margin: 0;
+        font-size: 14px;
+        color: #6b7280;
+        line-height: 1.4;
       }
       
       .sp-icon-item {
@@ -1025,6 +1271,29 @@ const AllegroDescriptionEditor = () => {
         
         .sp-icon-desc {
           font-size: 14px;
+        }
+        
+        .sp-features-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        
+        .sp-feature-icon {
+          font-size: 48px;
+          width: 70px;
+          height: 70px;
+        }
+        
+        .sp-feature-image {
+          width: 70px;
+          height: 70px;
+        }
+        
+        .sp-feature-content h4 {
+          font-size: 18px;
+        }
+        
+        .sp-feature-content p {
+          font-size: 15px;
         }
       }
       
@@ -1122,6 +1391,28 @@ const AllegroDescriptionEditor = () => {
           html += `<div class="sp-container" style="${cssVars}">
             <div class="sp-icons-grid">
               ${iconsHtml}
+            </div>
+          </div>\n`;
+          break;
+          
+        case 'features-grid':
+          const featuresHtml = section.features?.map(feature => {
+            const featureAlt = generateAltText(feature.image, feature.title);
+            return `
+            <div class="sp-feature-item">
+              ${feature.image 
+                ? `<img src="${generateImagePath(feature.image)}" class="sp-feature-image" alt="${featureAlt}">`
+                : `<div class="sp-feature-icon">${feature.icon}</div>`
+              }
+              <div class="sp-feature-content">
+                <h4>${feature.title}</h4>
+                <p>${feature.description}</p>
+              </div>
+            </div>
+          `;}).join('') || '';
+          html += `<div class="sp-container" style="${cssVars}">
+            <div class="sp-features-grid">
+              ${featuresHtml}
             </div>
           </div>\n`;
           break;
@@ -2244,6 +2535,211 @@ const AllegroDescriptionEditor = () => {
                           >
                             + Dodaj ikonę
                           </button>
+                        </div>
+                      )}
+
+                      {section.type === 'features-grid' && (
+                        <div>
+                          <div style={{ 
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                            gap: '15px',
+                            marginBottom: '20px'
+                          }}>
+                            {section.features?.map((feature, featureIndex) => (
+                              <div key={feature.id} style={{ 
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '15px',
+                                padding: '15px',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '10px',
+                                backgroundColor: 'white',
+                                position: 'relative'
+                              }}>
+                                <button
+                                  onClick={() => removeFeatureFromGrid(section.id, featureIndex)}
+                                  style={{
+                                    position: 'absolute',
+                                    top: '5px',
+                                    right: '5px',
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '20px',
+                                    height: '20px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  ×
+                                </button>
+
+                                <div style={{ 
+                                  flexShrink: 0,
+                                  width: '60px',
+                                  height: '60px',
+                                  position: 'relative'
+                                }}>
+                                  {feature.imagePreview ? (
+                                    <div style={{ position: 'relative' }}>
+                                      <img 
+                                        src={feature.imagePreview} 
+                                        alt={generateAltText(feature.image, feature.title)}
+                                        style={{ 
+                                          width: '60px', 
+                                          height: '60px', 
+                                          objectFit: 'cover', 
+                                          borderRadius: '8px'
+                                        }} 
+                                      />
+                                      <button
+                                        onClick={() => removeFeatureImage(section.id, featureIndex)}
+                                        style={{
+                                          position: 'absolute',
+                                          top: '-5px',
+                                          right: '-5px',
+                                          background: '#ef4444',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: '50%',
+                                          width: '16px',
+                                          height: '16px',
+                                          cursor: 'pointer',
+                                          fontSize: '10px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center'
+                                        }}
+                                      >
+                                        ×
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div style={{
+                                      width: '60px',
+                                      height: '60px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      backgroundColor: '#f3f4f6',
+                                      borderRadius: '8px',
+                                      position: 'relative'
+                                    }}>
+                                      <input
+                                        type="text"
+                                        value={feature.icon}
+                                        onChange={(e) => updateFeaturesGrid(section.id, featureIndex, 'icon', e.target.value)}
+                                        style={{
+                                          fontSize: '24px',
+                                          border: 'none',
+                                          textAlign: 'center',
+                                          width: '50px',
+                                          background: 'transparent',
+                                          outline: 'none'
+                                        }}
+                                        placeholder="🔇"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div style={{ flex: 1 }}>
+                                  <input
+                                    type="text"
+                                    value={feature.title}
+                                    onChange={(e) => updateFeaturesGrid(section.id, featureIndex, 'title', e.target.value)}
+                                    style={{
+                                      width: '100%',
+                                      padding: '5px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '4px',
+                                      fontWeight: 'bold',
+                                      marginBottom: '5px',
+                                      fontSize: '16px',
+                                      boxSizing: 'border-box'
+                                    }}
+                                    placeholder="Tytuł funkcji"
+                                  />
+                                  
+                                  <textarea
+                                    value={feature.description}
+                                    onChange={(e) => updateFeaturesGrid(section.id, featureIndex, 'description', e.target.value)}
+                                    style={{
+                                      width: '100%',
+                                      padding: '5px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '4px',
+                                      resize: 'vertical',
+                                      minHeight: '60px',
+                                      fontSize: '14px',
+                                      boxSizing: 'border-box'
+                                    }}
+                                    placeholder="Opis funkcji"
+                                  />
+
+                                  <div style={{ marginTop: '10px' }}>
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => handleFeatureImageUpload(section.id, featureIndex, e)}
+                                      style={{ display: 'none' }}
+                                      ref={(el) => {
+                                        if (el) fileInputRefs.current[`${section.id}-feature-${featureIndex}`] = el;
+                                      }}
+                                    />
+                                    <button
+                                      onClick={() => fileInputRefs.current[`${section.id}-feature-${featureIndex}`]?.click()}
+                                      style={{
+                                        padding: '4px 8px',
+                                        backgroundColor: feature.imagePreview ? '#6b7280' : '#10b981',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                        fontSize: '10px',
+                                        fontWeight: '500',
+                                        marginRight: '8px',
+                                        transition: 'all 0.2s ease'
+                                      }}
+                                    >
+                                      {feature.imagePreview ? '🔄 Zmień zdjęcie' : '📸 Dodaj zdjęcie'}
+                                    </button>
+                                  </div>
+
+                                  {feature.image && (
+                                    <div style={{ fontSize: '9px', color: '#6b7280', marginTop: '4px' }}>
+                                      Ścieżka: {generateImagePath(feature.image)}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          <div style={{ textAlign: 'center' }}>
+                            <button
+                              onClick={() => addFeatureToGrid(section.id)}
+                              style={{
+                                padding: '10px 20px',
+                                backgroundColor: '#f87171',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease',
+                                boxShadow: '0 2px 4px rgba(248, 113, 113, 0.2)'
+                              }}
+                            >
+                              + Dodaj funkcję
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
