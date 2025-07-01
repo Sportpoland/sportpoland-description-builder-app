@@ -310,7 +310,12 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
           lineHeight: '1.4',
           fontSize: '14px',
           fontFamily: 'inherit',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          direction: 'ltr',
+          textAlign: 'left',
+          writingMode: 'horizontal-tb',
+          whiteSpace: 'pre-wrap',
+          wordWrap: 'break-word'
         }}
         dangerouslySetInnerHTML={{ __html: value || '' }}
         suppressContentEditableWarning={true}
@@ -323,31 +328,55 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
             content: attr(data-placeholder);
             color: #9ca3af;
             font-style: italic;
+            direction: ltr;
+            text-align: left;
+          }
+          [contenteditable] {
+            direction: ltr !important;
+            text-align: left !important;
+            unicode-bidi: embed;
+            writing-mode: horizontal-tb !important;
+          }
+          [contenteditable] * {
+            direction: ltr;
+            unicode-bidi: embed;
           }
           [contenteditable] h1 {
             font-size: 2em;
             font-weight: bold;
             margin: 0.67em 0;
+            direction: ltr;
+            text-align: left;
           }
           [contenteditable] h2 {
             font-size: 1.5em;
             font-weight: bold;
             margin: 0.75em 0;
+            direction: ltr;
+            text-align: left;
           }
           [contenteditable] h3 {
             font-size: 1.17em;
             font-weight: bold;
             margin: 0.83em 0;
+            direction: ltr;
+            text-align: left;
           }
           [contenteditable] p {
             margin: 1em 0;
+            direction: ltr;
+            text-align: left;
           }
           [contenteditable] ul, [contenteditable] ol {
             margin: 1em 0;
             padding-left: 40px;
+            direction: ltr;
+            text-align: left;
           }
           [contenteditable] li {
             margin: 0.5em 0;
+            direction: ltr;
+            text-align: left;
           }
         `
       }} />
