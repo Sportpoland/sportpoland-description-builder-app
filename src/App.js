@@ -1,57 +1,73 @@
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 
-// Optymalizowany edytor tekstu z React.memo - WYSIWYG
+// Optymalizowany edytor tekstu z React.memo - Textarea + podgląd na żywo
 const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź tekst..." }) => {
-  const editorRef = useRef(null);
+  const textareaRef = useRef(null);
+  const [showPreview, setShowPreview] = useState(false);
 
-  const execCommand = useCallback((command, value = null) => {
-    document.execCommand(command, false, value);
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
+  const insertTag = useCallback((openTag, closeTag = null) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    
+    let newText;
+    if (closeTag) {
+      newText = textarea.value.substring(0, start) + 
+               openTag + selectedText + closeTag + 
+               textarea.value.substring(end);
+    } else {
+      newText = textarea.value.substring(0, start) + 
+               openTag + 
+               textarea.value.substring(end);
     }
-  }, [onChange]);
-
-  const insertHTML = useCallback((html) => {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      const div = document.createElement('div');
-      div.innerHTML = html;
-      const fragment = document.createDocumentFragment();
-      while (div.firstChild) {
-        fragment.appendChild(div.firstChild);
+    
+    onChange(newText);
+    
+    setTimeout(() => {
+      if (closeTag && selectedText) {
+        textarea.setSelectionRange(start + openTag.length, start + openTag.length + selectedText.length);
+      } else {
+        textarea.setSelectionRange(start + openTag.length, start + openTag.length);
       }
-      range.insertNode(fragment);
-      selection.removeAllRanges();
-    }
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
+      textarea.focus();
+    }, 0);
   }, [onChange]);
 
   const insertList = useCallback((listType) => {
-    execCommand(listType === 'ul' ? 'insertUnorderedList' : 'insertOrderedList');
-  }, [execCommand]);
+    const textarea = textareaRef.current;
+    if (!textarea) return;
 
-  const handleInput = useCallback((e) => {
-    onChange(e.target.innerHTML);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    
+    const lines = selectedText.split('\n').filter(line => line.trim());
+    let listHtml = '';
+    
+    if (listType === 'ul') {
+      listHtml = '<ul>\n' + lines.map(line => `  <li>${line.trim()}</li>`).join('\n') + '\n</ul>';
+    } else {
+      listHtml = '<ol>\n' + lines.map(line => `  <li>${line.trim()}</li>`).join('\n') + '\n</ol>';
+    }
+    
+    if (lines.length === 0) {
+      listHtml = listType === 'ul' ? '<ul>\n  <li>Element listy</li>\n</ul>' : '<ol>\n  <li>Element listy</li>\n</ol>';
+    }
+    
+    const newText = textarea.value.substring(0, start) + listHtml + textarea.value.substring(end);
+    onChange(newText);
+    
+    setTimeout(() => {
+      textarea.focus();
+    }, 0);
   }, [onChange]);
 
-  const handlePaste = useCallback((e) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text);
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
+  const handleChange = useCallback((e) => {
+    onChange(e.target.value);
   }, [onChange]);
-
-  useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value || '';
-    }
-  }, [value]);
 
   return (
     <div style={{ border: '1px solid #d1d5db', borderRadius: '6px', backgroundColor: 'white' }}>
@@ -66,7 +82,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
       }}>
         <button
           type="button"
-          onClick={() => execCommand('bold')}
+          onClick={() => insertTag('<strong>', '</strong>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -82,7 +98,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         </button>
         <button
           type="button"
-          onClick={() => execCommand('italic')}
+          onClick={() => insertTag('<em>', '</em>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -98,7 +114,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         </button>
         <button
           type="button"
-          onClick={() => execCommand('underline')}
+          onClick={() => insertTag('<u>', '</u>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -115,7 +131,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         <div style={{ width: '1px', backgroundColor: '#d1d5db', margin: '0 4px' }}></div>
         <button
           type="button"
-          onClick={() => execCommand('formatBlock', '<h1>')}
+          onClick={() => insertTag('<h1>', '</h1>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -131,7 +147,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         </button>
         <button
           type="button"
-          onClick={() => execCommand('formatBlock', '<h2>')}
+          onClick={() => insertTag('<h2>', '</h2>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -147,7 +163,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         </button>
         <button
           type="button"
-          onClick={() => execCommand('formatBlock', '<h3>')}
+          onClick={() => insertTag('<h3>', '</h3>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -163,7 +179,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         </button>
         <button
           type="button"
-          onClick={() => execCommand('formatBlock', '<p>')}
+          onClick={() => insertTag('<p>', '</p>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -210,7 +226,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         <div style={{ width: '1px', backgroundColor: '#d1d5db', margin: '0 4px' }}></div>
         <button
           type="button"
-          onClick={() => execCommand('justifyLeft')}
+          onClick={() => insertTag('<div style="text-align: left">', '</div>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -225,7 +241,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         </button>
         <button
           type="button"
-          onClick={() => execCommand('justifyCenter')}
+          onClick={() => insertTag('<div style="text-align: center">', '</div>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -240,7 +256,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         </button>
         <button
           type="button"
-          onClick={() => execCommand('justifyRight')}
+          onClick={() => insertTag('<div style="text-align: right">', '</div>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -256,7 +272,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         <div style={{ width: '1px', backgroundColor: '#d1d5db', margin: '0 4px' }}></div>
         <button
           type="button"
-          onClick={() => insertHTML('<br>')}
+          onClick={() => insertTag('<br>')}
           style={{
             padding: '4px 8px',
             border: '1px solid #d1d5db',
@@ -272,7 +288,7 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
         <select
           onChange={(e) => {
             if (e.target.value) {
-              execCommand('fontSize', e.target.value);
+              insertTag(`<span style="font-size: ${e.target.value}">`, '</span>');
               e.target.value = '';
             }
           }}
@@ -287,99 +303,76 @@ const TextEditor = memo(({ sectionId, value, onChange, placeholder = "Wprowadź 
           title="Rozmiar czcionki"
         >
           <option value="">Rozmiar</option>
-          <option value="1">10px</option>
-          <option value="2">12px</option>
-          <option value="3">14px</option>
-          <option value="4">16px</option>
-          <option value="5">18px</option>
-          <option value="6">20px</option>
-          <option value="7">24px</option>
+          <option value="10px">10px</option>
+          <option value="12px">12px</option>
+          <option value="14px">14px</option>
+          <option value="16px">16px</option>
+          <option value="18px">18px</option>
+          <option value="20px">20px</option>
+          <option value="24px">24px</option>
         </select>
+        <div style={{ width: '1px', backgroundColor: '#d1d5db', margin: '0 4px' }}></div>
+        <button
+          type="button"
+          onClick={() => setShowPreview(!showPreview)}
+          style={{
+            padding: '4px 8px',
+            border: '1px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: showPreview ? '#3b82f6' : 'white',
+            color: showPreview ? 'white' : 'black',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+          title="Pokaż/ukryj podgląd"
+        >
+          👁️
+        </button>
       </div>
       
-      {/* Edytor WYSIWYG */}
-      <div
-        ref={editorRef}
-        contentEditable
-        onInput={handleInput}
-        onPaste={handlePaste}
+      {/* Textarea do edycji */}
+      <textarea
+        ref={textareaRef}
+        value={value || ''}
+        onChange={handleChange}
+        placeholder={placeholder}
         style={{
+          width: '100%',
           minHeight: '120px',
           padding: '12px',
+          border: 'none',
           outline: 'none',
           lineHeight: '1.4',
           fontSize: '14px',
           fontFamily: 'inherit',
+          resize: 'vertical',
           boxSizing: 'border-box',
           direction: 'ltr',
           textAlign: 'left',
-          writingMode: 'horizontal-tb',
-          whiteSpace: 'pre-wrap',
-          wordWrap: 'break-word'
+          display: showPreview ? 'none' : 'block'
         }}
-        dangerouslySetInnerHTML={{ __html: value || '' }}
-        suppressContentEditableWarning={true}
-        data-placeholder={placeholder}
+        dir="ltr"
+        lang="pl"
       />
       
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          [contenteditable]:empty:before {
-            content: attr(data-placeholder);
-            color: #9ca3af;
-            font-style: italic;
-            direction: ltr;
-            text-align: left;
-          }
-          [contenteditable] {
-            direction: ltr !important;
-            text-align: left !important;
-            unicode-bidi: embed;
-            writing-mode: horizontal-tb !important;
-          }
-          [contenteditable] * {
-            direction: ltr;
-            unicode-bidi: embed;
-          }
-          [contenteditable] h1 {
-            font-size: 2em;
-            font-weight: bold;
-            margin: 0.67em 0;
-            direction: ltr;
-            text-align: left;
-          }
-          [contenteditable] h2 {
-            font-size: 1.5em;
-            font-weight: bold;
-            margin: 0.75em 0;
-            direction: ltr;
-            text-align: left;
-          }
-          [contenteditable] h3 {
-            font-size: 1.17em;
-            font-weight: bold;
-            margin: 0.83em 0;
-            direction: ltr;
-            text-align: left;
-          }
-          [contenteditable] p {
-            margin: 1em 0;
-            direction: ltr;
-            text-align: left;
-          }
-          [contenteditable] ul, [contenteditable] ol {
-            margin: 1em 0;
-            padding-left: 40px;
-            direction: ltr;
-            text-align: left;
-          }
-          [contenteditable] li {
-            margin: 0.5em 0;
-            direction: ltr;
-            text-align: left;
-          }
-        `
-      }} />
+      {/* Podgląd sformatowanego tekstu */}
+      {showPreview && (
+        <div
+          style={{
+            minHeight: '120px',
+            padding: '12px',
+            lineHeight: '1.4',
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            boxSizing: 'border-box',
+            border: '1px solid #e5e7eb',
+            margin: '8px',
+            borderRadius: '4px',
+            backgroundColor: '#f9fafb'
+          }}
+          dangerouslySetInnerHTML={{ __html: value || `<span style="color: #9ca3af; font-style: italic;">${placeholder}</span>` }}
+        />
+      )}
     </div>
   );
 });
