@@ -309,12 +309,28 @@ export default function AllegroDescriptionEditor() {
     setTemplateName('');
   }, [templateName, sections, productBrand, productCode]);
 
-  const loadTemplate = useCallback((t) => {
-    saveToHistory();
-    setSections(t.sections);
-    setProductBrand(t.productBrand || '');
-    setProductCode(t.productCode || '');
-  }, [saveToHistory]);
+ const loadTemplate = useCallback((t) => {
+  saveToHistory();
+
+  // Wyczyść wszystkie blob URL-e (nie przeżywają zapisu JSON)
+  const cleanSections = t.sections.map(s => ({
+    ...s,
+    imagePreview1: '',
+    imagePreview2: '',
+    icons: s.icons?.map(i => ({ ...i, imagePreview: '' })),
+    features: s.features?.map(f => ({ ...f, imagePreview: '' })),
+    uspItems: s.uspItems?.map(u => ({ ...u, imagePreview: '' })),
+    comparisonTable: s.comparisonTable ? {
+      ...s.comparisonTable,
+      products: s.comparisonTable.products.map(p => ({ ...p, imagePreview: '' }))
+    } : undefined
+  }));
+
+  setSections(cleanSections);
+  setProductBrand(t.productBrand || '');
+  setProductCode(t.productCode || '');
+  setShowTemplates(false); // zamknij panel i pokaż edytor
+}, [saveToHistory]);
 
   const deleteTemplate = useCallback((id) => { if (window.confirm('Usunąć szablon?')) setTemplates(prev => prev.filter(t => t.id !== id)); }, []);
 
@@ -813,5 +829,6 @@ export default function AllegroDescriptionEditor() {
     </div>
   );
 }
+
 
 
