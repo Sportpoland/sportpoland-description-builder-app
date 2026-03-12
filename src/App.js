@@ -199,7 +199,6 @@ export default function AllegroDescriptionEditor() {
   const fileInputRefs = useRef({});
   const importFileRef = useRef(null);
 
-  // Ładuj szablony z sessionStorage
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem('sp-templates-v2');
@@ -213,18 +212,18 @@ export default function AllegroDescriptionEditor() {
 
   // ─── TYPY SEKCJI ──────────────────────────────────────────────────────────
   const sectionTypes = [
-    { id: 'text-only',        name: 'Sam tekst',                    icon: '📝', group: 'Podstawowe' },
-    { id: 'image-left',       name: 'Zdjęcie ← Tekst',             icon: '◧',  group: 'Podstawowe' },
-    { id: 'image-right',      name: 'Tekst → Zdjęcie',             icon: '◨',  group: 'Podstawowe' },
-    { id: 'image-only',       name: 'Samo zdjęcie',                icon: '🖼️',  group: 'Podstawowe' },
-    { id: 'two-images',       name: '2 zdjęcia obok siebie',       icon: '▣',   group: 'Podstawowe' },
-    { id: 'youtube-video',    name: 'Film YouTube',                 icon: '▶️',  group: 'Podstawowe' },
-    { id: 'usp-2',            name: 'USP – 2 zalety',              icon: '⬛⬛', group: 'USP' },
-    { id: 'usp-4',            name: 'USP – 4 zalety',              icon: '⊞',   group: 'USP' },
-    { id: 'usp-6',            name: 'USP – 6 zalet',              icon: '⊟',   group: 'USP' },
-    { id: 'icons-grid',       name: 'Siatka ikon',                 icon: '✦',   group: 'Zaawansowane' },
-    { id: 'features-grid',    name: 'Funkcje 2×2',                 icon: '🔲',  group: 'Zaawansowane' },
-    { id: 'comparison-table', name: 'Tabela porównawcza',          icon: '📊',  group: 'Zaawansowane' },
+    { id: 'text-only',        name: 'Sam tekst',               icon: '📝', group: 'Podstawowe' },
+    { id: 'image-left',       name: 'Zdjęcie ← Tekst',        icon: '◧',  group: 'Podstawowe' },
+    { id: 'image-right',      name: 'Tekst → Zdjęcie',        icon: '◨',  group: 'Podstawowe' },
+    { id: 'image-only',       name: 'Samo zdjęcie',           icon: '🖼️', group: 'Podstawowe' },
+    { id: 'two-images',       name: '2 zdjęcia obok siebie',  icon: '▣',  group: 'Podstawowe' },
+    { id: 'youtube-video',    name: 'Film YouTube',            icon: '▶️', group: 'Podstawowe' },
+    { id: 'usp-2',            name: 'USP – 2 zalety',         icon: '⬛⬛',group: 'USP' },
+    { id: 'usp-4',            name: 'USP – 4 zalety',         icon: '⊞',  group: 'USP' },
+    { id: 'usp-6',            name: 'USP – 6 zalet',          icon: '⊟',  group: 'USP' },
+    { id: 'icons-grid',       name: 'Siatka ikon',            icon: '✦',  group: 'Zaawansowane' },
+    { id: 'features-grid',    name: 'Funkcje 2×2',            icon: '🔲', group: 'Zaawansowane' },
+    { id: 'comparison-table', name: 'Tabela porównawcza',     icon: '📊', group: 'Zaawansowane' },
   ];
 
   const makeUSPItems = (count) =>
@@ -309,43 +308,35 @@ export default function AllegroDescriptionEditor() {
     setTemplateName('');
   }, [templateName, sections, productBrand, productCode]);
 
-const loadTemplate = useCallback((t) => {
-  const cleanSections = (t.sections || []).map(s => ({
-    ...s,
-    imagePreview1: '',
-    imagePreview2: '',
-    icons: s.icons?.map(i => ({ ...i, imagePreview: '' })),
-    features: s.features?.map(f => ({ ...f, imagePreview: '' })),
-    uspItems: s.uspItems?.map(u => ({ ...u, imagePreview: '' })),
-    comparisonTable: s.comparisonTable ? {
-      ...s.comparisonTable,
-      products: s.comparisonTable.products.map(p => ({ ...p, imagePreview: '' }))
-    } : undefined
-  }));
+  const loadTemplate = useCallback((t) => {
+    const cleanSections = (t.sections || []).map(s => ({
+      ...s,
+      imagePreview1: '',
+      imagePreview2: '',
+      icons: s.icons?.map(i => ({ ...i, imagePreview: '' })),
+      features: s.features?.map(f => ({ ...f, imagePreview: '' })),
+      uspItems: s.uspItems?.map(u => ({ ...u, imagePreview: '' })),
+      comparisonTable: s.comparisonTable ? {
+        ...s.comparisonTable,
+        products: s.comparisonTable.products.map(p => ({ ...p, imagePreview: '' }))
+      } : undefined
+    }));
 
-  // Zapisz bieżący stan do historii bezpośrednio (bez saveToHistory)
-  setHistory(prev => [...prev, {
-    sections: JSON.parse(JSON.stringify(sections)),
-    productBrand,
-    productCode
-  }]);
-  setCurrentStep(prev => prev + 1);
+    setHistory(prev => [...prev, {
+      sections: JSON.parse(JSON.stringify(sections)),
+      productBrand,
+      productCode
+    }]);
+    setCurrentStep(prev => prev + 1);
 
-  setSections(cleanSections);
-  setProductBrand(t.productBrand || '');
-  setProductCode(t.productCode || '');
-  setShowTemplates(false);
-}, [sections, productBrand, productCode]);
-
-  setSections(cleanSections);
-  setProductBrand(t.productBrand || '');
-  setProductCode(t.productCode || '');
-  setShowTemplates(false); // zamknij panel i pokaż edytor
-}, [saveToHistory]);
+    setSections(cleanSections);
+    setProductBrand(t.productBrand || '');
+    setProductCode(t.productCode || '');
+    setShowTemplates(false);
+  }, [sections, productBrand, productCode]);
 
   const deleteTemplate = useCallback((id) => { if (window.confirm('Usunąć szablon?')) setTemplates(prev => prev.filter(t => t.id !== id)); }, []);
 
-  // Zapis na laptopa (plik JSON)
   const downloadTemplates = useCallback(() => {
     const data = JSON.stringify(templates, null, 2);
     const blob = new Blob([data], { type: 'application/json' });
@@ -355,7 +346,6 @@ const loadTemplate = useCallback((t) => {
     a.click(); URL.revokeObjectURL(url);
   }, [templates]);
 
-  // Zapisz pojedynczy szablon na laptopa
   const downloadSingleTemplate = useCallback((t) => {
     const blob = new Blob([JSON.stringify([t], null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -364,7 +354,6 @@ const loadTemplate = useCallback((t) => {
     a.click(); URL.revokeObjectURL(url);
   }, []);
 
-  // Wczytaj z laptopa (plik JSON)
   const uploadTemplates = useCallback((e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -476,7 +465,7 @@ const loadTemplate = useCallback((t) => {
     const a = document.createElement('a'); a.href = url; a.download = 'opis.html'; a.click(); URL.revokeObjectURL(url);
   }, [generateHTML]);
 
-  // ─── SEKCJA RENDEROWANIA SEKCJI ───────────────────────────────────────────
+  // ─── USP HELPERS ──────────────────────────────────────────────────────────
   const updateUSPItem = useCallback((sectionId, itemId, updated) => {
     setSections(prev => prev.map(s => s.id === sectionId
       ? { ...s, uspItems: s.uspItems.map(item => item.id === itemId ? updated : item) }
@@ -495,7 +484,7 @@ const loadTemplate = useCallback((t) => {
       : s));
   }, []);
 
-  // ─── STYLE ─────────────────────────────────────────────────────────────────
+  // ─── STYLE ────────────────────────────────────────────────────────────────
   const btn = (color, small) => ({
     padding: small ? '6px 12px' : '8px 16px',
     backgroundColor: color, color: 'white', border: 'none',
@@ -503,16 +492,15 @@ const loadTemplate = useCallback((t) => {
   });
 
   const groupColors = { Podstawowe: '#3b82f6', USP: '#8b5cf6', Zaawansowane: '#10b981' };
-
   const groups = [...new Set(sectionTypes.map(t => t.group))];
 
-  // ─── RENDER ────────────────────────────────────────────────────────────────
+  // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'system-ui, Arial, sans-serif' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
+        <div style={{ backgroundColor: 'white', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,.1)', border: '1px solid #e5e7eb' }}>
 
-        {/* NAGŁÓWEK */}
-        <div style={{ backgroundColor: 'white', borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,.1)', border: '1px solid #e5e7eb', marginBottom: 0 }}>
+          {/* NAGŁÓWEK */}
           <div style={{ borderBottom: '1px solid #e5e7eb', padding: 16, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
             <div>
               <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Edytor opisów SportPoland</h1>
@@ -530,8 +518,6 @@ const loadTemplate = useCallback((t) => {
           {showTemplates && (
             <div style={{ borderBottom: '1px solid #e5e7eb', padding: 16, backgroundColor: '#f8fafc' }}>
               <h3 style={{ margin: '0 0 12px', fontSize: 15 }}>📁 Zarządzanie szablonami</h3>
-
-              {/* Zapis bieżącego */}
               <div style={{ marginBottom: 12, padding: 12, border: '1px solid #e2e8f0', borderRadius: 8, backgroundColor: 'white' }}>
                 <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#374151' }}>💾 Zapisz bieżący stan jako szablon:</p>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -539,8 +525,6 @@ const loadTemplate = useCallback((t) => {
                   <button onClick={saveTemplate} style={btn('#10b981', true)}>💾 Zapisz</button>
                 </div>
               </div>
-
-              {/* Import / Eksport z laptopa */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 <div style={{ padding: 10, border: '1px solid #bfdbfe', borderRadius: 8, backgroundColor: '#eff6ff', flex: 1, minWidth: 200 }}>
                   <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: '#1e40af' }}>📤 Eksport na laptop:</p>
@@ -556,8 +540,6 @@ const loadTemplate = useCallback((t) => {
                   </button>
                 </div>
               </div>
-
-              {/* Lista szablonów */}
               {templates.length === 0
                 ? <p style={{ color: '#9ca3af', fontSize: 13, textAlign: 'center', padding: 16 }}>Brak zapisanych szablonów.</p>
                 : <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -569,9 +551,9 @@ const loadTemplate = useCallback((t) => {
                           {(t.productBrand || t.productCode) && <span style={{ fontSize: 11, color: '#6b7280', marginLeft: 8 }}>({t.productBrand} {t.productCode})</span>}
                         </div>
                         <div style={{ display: 'flex', gap: 4 }}>
-                          <button onClick={() => loadTemplate(t)} title="Wczytaj szablon" style={btn('#3b82f6', true)}>📂 Wczytaj</button>
-                          <button onClick={() => downloadSingleTemplate(t)} title="Zapisz na laptop" style={btn('#10b981', true)}>⬇️</button>
-                          <button onClick={() => deleteTemplate(t.id)} title="Usuń" style={btn('#ef4444', true)}>🗑️</button>
+                          <button onClick={() => loadTemplate(t)} style={btn('#3b82f6', true)}>📂 Wczytaj</button>
+                          <button onClick={() => downloadSingleTemplate(t)} style={btn('#10b981', true)}>⬇️</button>
+                          <button onClick={() => deleteTemplate(t.id)} style={btn('#ef4444', true)}>🗑️</button>
                         </div>
                       </div>
                     ))}
@@ -580,7 +562,7 @@ const loadTemplate = useCallback((t) => {
             </div>
           )}
 
-          {/* PRODUKT */}
+          {/* DANE PRODUKTU */}
           <div style={{ borderBottom: '1px solid #e5e7eb', padding: 16 }}>
             <h3 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#374151' }}>Dane produktu</h3>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -641,10 +623,8 @@ const loadTemplate = useCallback((t) => {
                       {/* Treść sekcji */}
                       <div style={{ padding: 12, backgroundColor: s.backgroundColor }}>
 
-                        {/* SAM TEKST */}
                         {s.type === 'text-only' && <TextEditor sectionId={s.id} value={s.text} onChange={v => updateSection(s.id, 'text', v)} />}
 
-                        {/* ZDJĘCIE + TEKST */}
                         {(s.type === 'image-left' || s.type === 'image-right') && (
                           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                             <div style={{ flex: 1, minWidth: 200 }}>
@@ -657,7 +637,6 @@ const loadTemplate = useCallback((t) => {
                           </div>
                         )}
 
-                        {/* SAMO ZDJĘCIE */}
                         {s.type === 'image-only' && (
                           <div>
                             <ImageUploader preview={s.imagePreview1} onUpload={e => handleImageUpload(s.id, 'image1', e)} size="large" />
@@ -665,7 +644,6 @@ const loadTemplate = useCallback((t) => {
                           </div>
                         )}
 
-                        {/* DWA ZDJĘCIA */}
                         {s.type === 'two-images' && (
                           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                             {[1, 2].map(n => (
@@ -678,19 +656,22 @@ const loadTemplate = useCallback((t) => {
                           </div>
                         )}
 
-                        {/* YOUTUBE */}
                         {s.type === 'youtube-video' && s.youtubeVideo && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             <input type="text" value={s.youtubeVideo.url} onChange={e => updateSection(s.id, 'youtubeVideo', { ...s.youtubeVideo, url: e.target.value })} placeholder="URL YouTube (np. https://www.youtube.com/watch?v=...)" style={{ padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }} />
                             {s.youtubeVideo.url && (() => {
                               let vid = '';
                               try { const u = new URL(s.youtubeVideo.url); vid = u.hostname.includes('youtu.be') ? u.pathname.slice(1) : u.searchParams.get('v') || ''; } catch (e) {}
-                              return vid ? <div style={{ position: 'relative', paddingBottom: '40%', height: 0, overflow: 'hidden', borderRadius: 8 }}><iframe
-  src={`https://www.youtube.com/embed/${vid}`}
-  title="YouTube video preview"
-  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-  allowFullScreen
-/></div> : null;
+                              return vid ? (
+                                <div style={{ position: 'relative', paddingBottom: '40%', height: 0, overflow: 'hidden', borderRadius: 8 }}>
+                                  <iframe
+                                    src={`https://www.youtube.com/embed/${vid}`}
+                                    title="YouTube video preview"
+                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                                    allowFullScreen
+                                  />
+                                </div>
+                              ) : null;
                             })()}
                             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                               <input type="checkbox" checked={s.youtubeVideo.autoplay} onChange={e => updateSection(s.id, 'youtubeVideo', { ...s.youtubeVideo, autoplay: e.target.checked })} />
@@ -699,11 +680,10 @@ const loadTemplate = useCallback((t) => {
                           </div>
                         )}
 
-                        {/* USP SEKCJE */}
                         {s.type.startsWith('usp-') && s.uspItems && (
                           <div>
                             <p style={{ margin: '0 0 10px', fontSize: 12, color: '#6b7280' }}>
-                              Na desktopie: 2 kafelki obok siebie, układ 7/10 zdjęcie + 3/10 tekst. Możesz dodać dowolną liczbę zalet.
+                              Na desktopie: 2 kafelki obok siebie, układ 7/10 zdjęcie + 3/10 tekst.
                             </p>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10, marginBottom: 12 }}>
                               {s.uspItems.map((item, idx) => (
@@ -718,7 +698,6 @@ const loadTemplate = useCallback((t) => {
                           </div>
                         )}
 
-                        {/* SIATKA IKON */}
                         {s.type === 'icons-grid' && s.icons && (
                           <div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginBottom: 10 }}>
@@ -726,7 +705,10 @@ const loadTemplate = useCallback((t) => {
                                 <div key={icon.id} style={{ width: 160, padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, backgroundColor: 'white', position: 'relative' }}>
                                   <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.filter((_, i) => i !== idx) } : sec))} style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 18, height: 18, cursor: 'pointer', fontSize: 12, lineHeight: 1 }}>×</button>
                                   <div style={{ textAlign: 'center', marginBottom: 6 }}>
-                                    {icon.imagePreview ? <img src={icon.imagePreview} alt="" style={{ width: 50, height: 50, borderRadius: 6, objectFit: 'cover' }} /> : <input type="text" value={icon.icon} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, icon: e.target.value } : ic) } : sec))} style={{ fontSize: 32, textAlign: 'center', width: '100%', border: 'none', background: 'transparent' }} />}
+                                    {icon.imagePreview
+                                      ? <img src={icon.imagePreview} alt="" style={{ width: 50, height: 50, borderRadius: 6, objectFit: 'cover' }} />
+                                      : <input type="text" value={icon.icon} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, icon: e.target.value } : ic) } : sec))} style={{ fontSize: 32, textAlign: 'center', width: '100%', border: 'none', background: 'transparent' }} />
+                                    }
                                   </div>
                                   <input type="file" accept="image/*" onChange={e => { const f = e.target.files[0]; if (f) { const url = URL.createObjectURL(f); setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, image: f.name, imagePreview: url } : ic) } : sec)); }}} style={{ display: 'none' }} ref={el => { if (el) fileInputRefs.current[`${s.id}-icon-${idx}`] = el; }} />
                                   <button onClick={() => fileInputRefs.current[`${s.id}-icon-${idx}`]?.click()} style={{ width: '100%', padding: 4, backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 10, marginBottom: 6 }}>📸 Zmień zdjęcie</button>
@@ -739,7 +721,6 @@ const loadTemplate = useCallback((t) => {
                           </div>
                         )}
 
-                        {/* FUNKCJE 2x2 */}
                         {s.type === 'features-grid' && s.features && (
                           <div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 10, marginBottom: 10 }}>
@@ -747,7 +728,10 @@ const loadTemplate = useCallback((t) => {
                                 <div key={feat.id} style={{ display: 'flex', gap: 10, padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, backgroundColor: 'white', position: 'relative' }}>
                                   <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, features: sec.features.filter((_, i) => i !== idx) } : sec))} style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 18, height: 18, cursor: 'pointer', fontSize: 12, lineHeight: 1 }}>×</button>
                                   <div style={{ width: 50, height: 50, flexShrink: 0 }}>
-                                    {feat.imagePreview ? <img src={feat.imagePreview} alt="" style={{ width: 50, height: 50, borderRadius: 6, objectFit: 'cover' }} /> : <input type="text" value={feat.icon} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, features: sec.features.map((f, i) => i === idx ? { ...f, icon: e.target.value } : f) } : sec))} style={{ fontSize: 24, textAlign: 'center', width: 50, border: 'none', background: 'transparent' }} />}
+                                    {feat.imagePreview
+                                      ? <img src={feat.imagePreview} alt="" style={{ width: 50, height: 50, borderRadius: 6, objectFit: 'cover' }} />
+                                      : <input type="text" value={feat.icon} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, features: sec.features.map((f, i) => i === idx ? { ...f, icon: e.target.value } : f) } : sec))} style={{ fontSize: 24, textAlign: 'center', width: 50, border: 'none', background: 'transparent' }} />
+                                    }
                                   </div>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <input type="text" value={feat.title} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, features: sec.features.map((f, i) => i === idx ? { ...f, title: e.target.value } : f) } : sec))} placeholder="Tytuł" style={{ width: '100%', padding: 4, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 13, fontWeight: 600, marginBottom: 4, boxSizing: 'border-box' }} />
@@ -762,7 +746,6 @@ const loadTemplate = useCallback((t) => {
                           </div>
                         )}
 
-                        {/* TABELA PORÓWNAWCZA */}
                         {s.type === 'comparison-table' && s.comparisonTable && (
                           <div>
                             <h4 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 8px', color: '#374151' }}>Produkty:</h4>
@@ -840,7 +823,3 @@ const loadTemplate = useCallback((t) => {
     </div>
   );
 }
-
-
-
-
