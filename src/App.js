@@ -409,7 +409,7 @@ export default function AllegroDescriptionEditor() {
         try { const u = new URL(s.youtubeVideo.url); vid = u.hostname.includes('youtu.be') ? u.pathname.slice(1) : u.searchParams.get('v') || ''; } catch (e) {}
         if (vid) {
           const params = [s.youtubeVideo.autoplay && 'autoplay=1', s.youtubeVideo.startTime > 0 && `start=${s.youtubeVideo.startTime}`].filter(Boolean).join('&');
-          html += `<div class="sp-container" style="${bg}">\n<div class="sp-youtube-container"><iframe src="https://www.youtube.com/embed/${vid}${params ? '?' + params : ''}" allowfullscreen="allowfullscreen"></iframe></div>\n</div>\n`;
+          html += `<div class="sp-container" style="${bg}">\n<div class="sp-youtube-container"><iframe title="YouTube video player" src="https://www.youtube.com/embed/${vid}${params ? '?' + params : ''}" allowfullscreen="allowfullscreen"></iframe></div>\n</div>\n`;
         }
       } else if (s.type.startsWith('usp-')) {
         html += generateUSPHtml(s, preview);
@@ -658,7 +658,7 @@ export default function AllegroDescriptionEditor() {
                             {s.youtubeVideo.url && (() => {
                               let vid = '';
                               try { const u = new URL(s.youtubeVideo.url); vid = u.hostname.includes('youtu.be') ? u.pathname.slice(1) : u.searchParams.get('v') || ''; } catch (e) {}
-                              return vid ? <div style={{ position: 'relative', paddingBottom: '40%', height: 0, overflow: 'hidden', borderRadius: 8 }}><iframe src={`https://www.youtube.com/embed/${vid}`} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }} allowFullScreen /></div> : null;
+                              return vid ? <div style={{ position: 'relative', paddingBottom: '40%', height: 0, overflow: 'hidden', borderRadius: 8 }}><iframe src={`https://www.youtube.com/embed/${vid}`} title="YouTube video preview" style={{ ... }} allowFullScreen /></div> : null;
                             })()}
                             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                               <input type="checkbox" checked={s.youtubeVideo.autoplay} onChange={e => updateSection(s.id, 'youtubeVideo', { ...s.youtubeVideo, autoplay: e.target.checked })} />
@@ -808,3 +808,4 @@ export default function AllegroDescriptionEditor() {
     </div>
   );
 }
+
