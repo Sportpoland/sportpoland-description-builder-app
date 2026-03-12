@@ -309,11 +309,8 @@ export default function AllegroDescriptionEditor() {
     setTemplateName('');
   }, [templateName, sections, productBrand, productCode]);
 
- const loadTemplate = useCallback((t) => {
-  saveToHistory();
-
-  // Wyczyść wszystkie blob URL-e (nie przeżywają zapisu JSON)
-  const cleanSections = t.sections.map(s => ({
+const loadTemplate = useCallback((t) => {
+  const cleanSections = (t.sections || []).map(s => ({
     ...s,
     imagePreview1: '',
     imagePreview2: '',
@@ -325,6 +322,20 @@ export default function AllegroDescriptionEditor() {
       products: s.comparisonTable.products.map(p => ({ ...p, imagePreview: '' }))
     } : undefined
   }));
+
+  // Zapisz bieżący stan do historii bezpośrednio (bez saveToHistory)
+  setHistory(prev => [...prev, {
+    sections: JSON.parse(JSON.stringify(sections)),
+    productBrand,
+    productCode
+  }]);
+  setCurrentStep(prev => prev + 1);
+
+  setSections(cleanSections);
+  setProductBrand(t.productBrand || '');
+  setProductCode(t.productCode || '');
+  setShowTemplates(false);
+}, [sections, productBrand, productCode]);
 
   setSections(cleanSections);
   setProductBrand(t.productBrand || '');
@@ -829,6 +840,7 @@ export default function AllegroDescriptionEditor() {
     </div>
   );
 }
+
 
 
 
