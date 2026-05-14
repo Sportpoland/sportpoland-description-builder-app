@@ -127,8 +127,8 @@ const EXPORT_CSS = `
 .sp-image{width:100%;height:auto;border-radius:10px;max-width:520px;display:block;margin:0 auto}
 .sp-image-container{text-align:center}
 .sp-image-only{width:100%;height:auto;max-height:400px;border-radius:10px;object-fit:contain;display:block;margin:0 auto}
-.sp-icons-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:15px;text-align:center}
-.sp-icon-item{width:100%;max-width:180px;min-width:150px;text-align:center;padding:10px;box-sizing:border-box}
+.sp-icons-grid{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:15px;text-align:center;width:100%}
+.sp-icon-item{text-align:center;padding:10px;box-sizing:border-box;width:100%}
 .sp-icon-emoji{font-size:40px;margin-bottom:10px;display:block}
 .sp-icon-image{width:50px;height:50px;object-fit:cover;border-radius:8px;margin:0 auto 10px;display:block}
 .sp-features-grid{display:grid;grid-template-columns:1fr;gap:20px}
@@ -154,6 +154,7 @@ const EXPORT_CSS = `
 .sp-usp-text h2,.sp-usp-text h3{margin:0 0 8px}
 .sp-usp-text p{margin:0;line-height:1.5}
 @media(max-width:767px){
+  .sp-icons-grid{grid-auto-flow:row;grid-template-columns:1fr}
   .sp-flex{flex-direction:column}
   .sp-flex .sp-image-container{order:1}
   .sp-flex>div:not(.sp-image-container){order:2}
@@ -170,7 +171,7 @@ const EXPORT_CSS = `
   .sp-feature-image{width:100px;height:100px}
   .sp-feature-content h4{font-size:20px}
   .sp-usp-grid{grid-template-columns:1fr 1fr;gap:20px}
-  .sp-usp-item{height:620px;display:grid;grid-template-rows:7fr 3fr}
+  .sp-usp-item{height:380px;display:grid;grid-template-rows:7fr 3fr}
   .sp-usp-text{padding:18px 20px;display:flex;flex-direction:column;justify-content:flex-start}
 }
 @media(min-width:1024px){
@@ -180,7 +181,7 @@ const EXPORT_CSS = `
   .sp-features-grid{gap:30px}
   .sp-feature-item{padding:30px;gap:30px}
   .sp-feature-icon{font-size:70px;width:120px;height:120px}
-  .sp-usp-item{height:720px}
+  .sp-usp-item{height:440px}
 }
 </style>
 `;
