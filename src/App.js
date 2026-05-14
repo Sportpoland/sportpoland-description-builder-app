@@ -127,8 +127,8 @@ const EXPORT_CSS = `
 .sp-image{width:100%;height:auto;border-radius:10px;max-width:520px;display:block;margin:0 auto}
 .sp-image-container{text-align:center}
 .sp-image-only{width:100%;height:auto;max-height:400px;border-radius:10px;object-fit:contain;display:block;margin:0 auto}
-.sp-icons-grid{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:15px;text-align:center;width:100%}
-.sp-icon-item{text-align:center;padding:10px;box-sizing:border-box;width:100%}
+.sp-icons-grid{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:15px;text-align:justify;width:100%}
+.sp-icon-item{text-align:justify;padding:10px;box-sizing:border-box;width:100%}
 .sp-icon-emoji{font-size:40px;margin-bottom:10px;display:block}
 .sp-icon-image{width:50px;height:50px;object-fit:cover;border-radius:8px;margin:0 auto 10px;display:block}
 .sp-features-grid{display:grid;grid-template-columns:1fr;gap:20px}
