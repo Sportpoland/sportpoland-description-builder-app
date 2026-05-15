@@ -127,16 +127,26 @@ const EXPORT_CSS = `
 .sp-image{width:100%;height:auto;border-radius:10px;max-width:520px;display:block;margin:0 auto}
 .sp-image-container{text-align:center}
 .sp-image-only{width:100%;height:auto;max-height:400px;border-radius:10px;object-fit:contain;display:block;margin:0 auto}
-.sp-icons-grid{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:15px;text-align:justify;width:100%}
-.sp-icon-item{text-align:justify;padding:10px;box-sizing:border-box;width:100%}
-.sp-icon-emoji{font-size:40px;margin-bottom:10px;display:block}
-.sp-icon-image{width:50px;height:50px;object-fit:cover;border-radius:8px;margin:0 auto 10px;display:block}
+
+/* ===== SIATKA IKON (styl kart USP) ===== */
+.sp-icons-grid{display:grid;grid-template-columns:1fr;gap:15px;width:100%}
+.sp-icon-item{background:#fff;border-radius:15px;overflow:hidden;display:flex;flex-direction:column}
+.sp-icon-media{width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;line-height:0;padding:10px 10px 0}
+.sp-icon-emoji{font-size:40px;display:block;text-align:center;padding:10px 10px 0}
+.sp-icon-image{width:auto;height:auto;max-width:100%;max-height:120px;display:block;object-fit:contain;object-position:center}
+.sp-icon-text{padding:10px 16px 16px}
+.sp-icon-text h4{margin:0 0 8px;font-size:15px;font-weight:bold}
+.sp-icon-desc{margin:0;line-height:1.5;font-size:14px}
+
+/* ===== FEATURES ===== */
 .sp-features-grid{display:grid;grid-template-columns:1fr;gap:20px}
 .sp-feature-item{display:flex;align-items:flex-start;gap:20px;padding:20px}
 .sp-feature-icon{font-size:50px;flex-shrink:0;width:80px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:10px}
 .sp-feature-image{width:80px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0}
 .sp-feature-content h4{margin:0 0 10px;font-size:18px;font-weight:bold}
 .sp-feature-content p{margin:0;font-size:16px;line-height:1.5}
+
+/* ===== TABELA ===== */
 .sp-comparison-table{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .sp-comparison-table table{width:100%;border-collapse:collapse;min-width:600px}
 .sp-comparison-table th,.sp-comparison-table td{padding:12px;text-align:left;border:1px solid #e5e7eb;vertical-align:top}
@@ -144,8 +154,12 @@ const EXPORT_CSS = `
 .sp-comparison-table td:first-child{font-weight:600}
 .sp-product-header{text-align:center}
 .sp-product-image{width:100px;height:100px;object-fit:cover;border-radius:8px;margin:0 auto 8px;display:block}
+
+/* ===== YOUTUBE ===== */
 .sp-youtube-container{position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden}
 .sp-youtube-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;border-radius:10px}
+
+/* ===== USP ===== */
 .sp-usp-grid{display:grid;grid-template-columns:1fr;gap:15px}
 .sp-usp-item{background:#fff;border-radius:15px;overflow:hidden;display:flex;flex-direction:column}
 .sp-usp-media{width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;line-height:0}
@@ -153,18 +167,19 @@ const EXPORT_CSS = `
 .sp-usp-text{padding:16px}
 .sp-usp-text h2,.sp-usp-text h3{margin:0 0 8px}
 .sp-usp-text p{margin:0;line-height:1.5}
+
 @media(max-width:767px){
-  .sp-icons-grid{grid-auto-flow:row;grid-template-columns:1fr}
   .sp-flex{flex-direction:column}
   .sp-flex .sp-image-container{order:1}
   .sp-flex>div:not(.sp-image-container){order:2}
+  .sp-icons-grid{grid-template-columns:1fr}
 }
 @media(min-width:768px){
   .sp-container{padding:20px}
   .sp-flex{flex-direction:row;align-items:center;gap:20px}
   .sp-flex.reverse{flex-direction:row-reverse}
   .sp-flex>div{flex:1}
-  .sp-image{max-width:600px}
+  .sp-image{max-width:600px;max-height:460px;object-fit:contain}
   .sp-features-grid{grid-template-columns:1fr 1fr;gap:25px}
   .sp-feature-item{padding:25px;gap:25px}
   .sp-feature-icon{font-size:60px;width:100px;height:100px}
@@ -173,15 +188,17 @@ const EXPORT_CSS = `
   .sp-usp-grid{grid-template-columns:1fr 1fr;gap:20px}
   .sp-usp-item{height:380px;display:grid;grid-template-rows:7fr 3fr}
   .sp-usp-text{padding:18px 20px;display:flex;flex-direction:column;justify-content:flex-start}
+  .sp-icons-grid{grid-template-columns:1fr 1fr;gap:20px}
 }
 @media(min-width:1024px){
   .sp-container{padding:25px}
   .sp-flex{gap:25px}
-  .sp-image{max-width:720px}
+  .sp-image{max-width:720px;max-height:520px}
   .sp-features-grid{gap:30px}
   .sp-feature-item{padding:30px;gap:30px}
   .sp-feature-icon{font-size:70px;width:120px;height:120px}
   .sp-usp-item{height:440px}
+  .sp-icons-grid{grid-template-columns:repeat(4,1fr);gap:20px}
 }
 </style>
 `;
@@ -211,7 +228,6 @@ export default function AllegroDescriptionEditor() {
     try { sessionStorage.setItem('sp-templates-v2', JSON.stringify(templates)); } catch (e) {}
   }, [templates]);
 
-  // ─── TYPY SEKCJI ──────────────────────────────────────────────────────────
   const sectionTypes = [
     { id: 'text-only',        name: 'Sam tekst',               icon: '📝', group: 'Podstawowe' },
     { id: 'image-left',       name: 'Zdjęcie ← Tekst',        icon: '◧',  group: 'Podstawowe' },
@@ -230,7 +246,6 @@ export default function AllegroDescriptionEditor() {
   const makeUSPItems = (count) =>
     Array.from({ length: count }, (_, i) => ({ id: i + 1, image: '', imagePreview: '', title: `Zaleta ${i + 1}`, description: 'Opis zalety produktu...' }));
 
-  // ─── HISTORIA ─────────────────────────────────────────────────────────────
   const saveToHistory = useCallback((s = sections, pb = productBrand, pc = productCode) => {
     setHistory(prev => {
       const newH = [...prev.slice(0, currentStep + 1), { sections: JSON.parse(JSON.stringify(s)), productBrand: pb, productCode: pc }];
@@ -249,7 +264,6 @@ export default function AllegroDescriptionEditor() {
     }
   }, [currentStep, history]);
 
-  // ─── SEKCJE ───────────────────────────────────────────────────────────────
   const addSection = useCallback((type) => {
     const newSec = {
       id: Date.now(), type,
@@ -301,7 +315,6 @@ export default function AllegroDescriptionEditor() {
     setSections(prev => prev.map(s => s.id === sectionId ? { ...s, [field]: f.name, [previewField]: url } : s));
   }, []);
 
-  // ─── SZABLONY ─────────────────────────────────────────────────────────────
   const saveTemplate = useCallback(() => {
     if (!templateName.trim()) { alert('Podaj nazwę szablonu!'); return; }
     const tmpl = { id: Date.now(), name: templateName.trim(), sections: JSON.parse(JSON.stringify(sections)), productBrand, productCode, createdAt: new Date().toLocaleString('pl-PL') };
@@ -311,25 +324,14 @@ export default function AllegroDescriptionEditor() {
 
   const loadTemplate = useCallback((t) => {
     const cleanSections = (t.sections || []).map(s => ({
-      ...s,
-      imagePreview1: '',
-      imagePreview2: '',
+      ...s, imagePreview1: '', imagePreview2: '',
       icons: s.icons?.map(i => ({ ...i, imagePreview: '' })),
       features: s.features?.map(f => ({ ...f, imagePreview: '' })),
       uspItems: s.uspItems?.map(u => ({ ...u, imagePreview: '' })),
-      comparisonTable: s.comparisonTable ? {
-        ...s.comparisonTable,
-        products: s.comparisonTable.products.map(p => ({ ...p, imagePreview: '' }))
-      } : undefined
+      comparisonTable: s.comparisonTable ? { ...s.comparisonTable, products: s.comparisonTable.products.map(p => ({ ...p, imagePreview: '' })) } : undefined
     }));
-
-    setHistory(prev => [...prev, {
-      sections: JSON.parse(JSON.stringify(sections)),
-      productBrand,
-      productCode
-    }]);
+    setHistory(prev => [...prev, { sections: JSON.parse(JSON.stringify(sections)), productBrand, productCode }]);
     setCurrentStep(prev => prev + 1);
-
     setSections(cleanSections);
     setProductBrand(t.productBrand || '');
     setProductCode(t.productCode || '');
@@ -339,8 +341,7 @@ export default function AllegroDescriptionEditor() {
   const deleteTemplate = useCallback((id) => { if (window.confirm('Usunąć szablon?')) setTemplates(prev => prev.filter(t => t.id !== id)); }, []);
 
   const downloadTemplates = useCallback(() => {
-    const data = JSON.stringify(templates, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(templates, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = `sportpoland-szablony-${new Date().toISOString().split('T')[0]}.json`;
@@ -372,7 +373,6 @@ export default function AllegroDescriptionEditor() {
     e.target.value = '';
   }, []);
 
-  // ─── GENEROWANIE HTML ─────────────────────────────────────────────────────
   const generateImagePath = useCallback((imageName) => {
     if (!imageName || !productBrand || !productCode) return imageName || '';
     return `/data/include/cms/sportpoland_com/pliki-opisy/${productBrand}/${productCode}/${imageName}`;
@@ -388,20 +388,10 @@ export default function AllegroDescriptionEditor() {
   const generateUSPHtml = useCallback((s, preview) => {
     const items = (s.uspItems || []).map(item => {
       const src = preview ? item.imagePreview : generateImagePath(item.image);
-      const imgHtml = (item.image || item.imagePreview)
-        ? `<img class="sp-usp-img" src="${src}" alt="${item.title}" border="0">`
-        : '';
-      return `<div class="sp-usp-item">
-  <div class="sp-usp-media">${imgHtml}</div>
-  <div class="sp-usp-text">
-    <h3>${item.title}</h3>
-    <p>${item.description}</p>
-  </div>
-</div>`;
+      const imgHtml = (item.image || item.imagePreview) ? `<img class="sp-usp-img" src="${src}" alt="${item.title}" border="0">` : '';
+      return `<div class="sp-usp-item">\n  <div class="sp-usp-media">${imgHtml}</div>\n  <div class="sp-usp-text"><h3>${item.title}</h3><p>${item.description}</p></div>\n</div>`;
     }).join('\n');
-    return `<div class="sp-container sp-usp" style="--bg-color:${s.backgroundColor};">
-<div class="sp-usp-grid">${items}</div>
-</div>\n`;
+    return `<div class="sp-container sp-usp" style="--bg-color:${s.backgroundColor};">\n<div class="sp-usp-grid">${items}</div>\n</div>\n`;
   }, [generateImagePath]);
 
   const generateHTML = useCallback((preview = false) => {
@@ -433,8 +423,11 @@ export default function AllegroDescriptionEditor() {
       } else if (s.type === 'icons-grid' && s.icons) {
         const icons = s.icons.map(i => {
           const src = preview ? i.imagePreview : generateImagePath(i.image);
-          return `<div class="sp-icon-item">${(i.image || i.imagePreview) ? `<img src="${src}" class="sp-icon-image" alt="${i.title}">` : `<span class="sp-icon-emoji">${i.icon}</span>`}<h4>${i.title}</h4><p class="sp-icon-desc">${i.description}</p></div>`;
-        }).join('');
+          const media = (i.image || i.imagePreview)
+            ? `<div class="sp-icon-media"><img class="sp-icon-image" src="${src}" alt="${i.title}" border="0"></div>`
+            : `<span class="sp-icon-emoji">${i.icon}</span>`;
+          return `<div class="sp-icon-item">${media}<div class="sp-icon-text"><h4>${i.title}</h4><p class="sp-icon-desc">${i.description}</p></div></div>`;
+        }).join('\n');
         html += `<div class="sp-container" style="${bg}">\n<div class="sp-icons-grid">${icons}</div>\n</div>\n`;
       } else if (s.type === 'features-grid' && s.features) {
         const feats = s.features.map(f => {
@@ -466,26 +459,19 @@ export default function AllegroDescriptionEditor() {
     const a = document.createElement('a'); a.href = url; a.download = 'opis.html'; a.click(); URL.revokeObjectURL(url);
   }, [generateHTML]);
 
-  // ─── USP HELPERS ──────────────────────────────────────────────────────────
   const updateUSPItem = useCallback((sectionId, itemId, updated) => {
-    setSections(prev => prev.map(s => s.id === sectionId
-      ? { ...s, uspItems: s.uspItems.map(item => item.id === itemId ? updated : item) }
-      : s));
+    setSections(prev => prev.map(s => s.id === sectionId ? { ...s, uspItems: s.uspItems.map(item => item.id === itemId ? updated : item) } : s));
   }, []);
 
   const deleteUSPItem = useCallback((sectionId, itemId) => {
-    setSections(prev => prev.map(s => s.id === sectionId
-      ? { ...s, uspItems: s.uspItems.filter(item => item.id !== itemId) }
-      : s));
+    setSections(prev => prev.map(s => s.id === sectionId ? { ...s, uspItems: s.uspItems.filter(item => item.id !== itemId) } : s));
   }, []);
 
   const addUSPItem = useCallback((sectionId) => {
     setSections(prev => prev.map(s => s.id === sectionId
-      ? { ...s, uspItems: [...(s.uspItems || []), { id: Date.now(), image: '', imagePreview: '', title: 'Nowa zaleta', description: 'Opis...' }] }
-      : s));
+      ? { ...s, uspItems: [...(s.uspItems || []), { id: Date.now(), image: '', imagePreview: '', title: 'Nowa zaleta', description: 'Opis...' }] } : s));
   }, []);
 
-  // ─── STYLE ────────────────────────────────────────────────────────────────
   const btn = (color, small) => ({
     padding: small ? '6px 12px' : '8px 16px',
     backgroundColor: color, color: 'white', border: 'none',
@@ -495,7 +481,6 @@ export default function AllegroDescriptionEditor() {
   const groupColors = { Podstawowe: '#3b82f6', USP: '#8b5cf6', Zaawansowane: '#10b981' };
   const groups = [...new Set(sectionTypes.map(t => t.group))];
 
-  // ─── RENDER ───────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'system-ui, Arial, sans-serif' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: 16 }}>
@@ -529,16 +514,12 @@ export default function AllegroDescriptionEditor() {
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 <div style={{ padding: 10, border: '1px solid #bfdbfe', borderRadius: 8, backgroundColor: '#eff6ff', flex: 1, minWidth: 200 }}>
                   <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: '#1e40af' }}>📤 Eksport na laptop:</p>
-                  <button onClick={downloadTemplates} disabled={templates.length === 0} style={{ ...btn('#2563eb', true), opacity: templates.length === 0 ? 0.5 : 1, width: '100%' }}>
-                    ⬇️ Pobierz wszystkie szablony (.json)
-                  </button>
+                  <button onClick={downloadTemplates} disabled={templates.length === 0} style={{ ...btn('#2563eb', true), opacity: templates.length === 0 ? 0.5 : 1, width: '100%' }}>⬇️ Pobierz wszystkie szablony (.json)</button>
                 </div>
                 <div style={{ padding: 10, border: '1px solid #bbf7d0', borderRadius: 8, backgroundColor: '#f0fdf4', flex: 1, minWidth: 200 }}>
                   <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: '#166534' }}>📥 Import z laptopa:</p>
                   <input type="file" accept=".json" onChange={uploadTemplates} style={{ display: 'none' }} ref={importFileRef} />
-                  <button onClick={() => importFileRef.current?.click()} style={{ ...btn('#16a34a', true), width: '100%' }}>
-                    ⬆️ Wczytaj plik .json z laptopa
-                  </button>
+                  <button onClick={() => importFileRef.current?.click()} style={{ ...btn('#16a34a', true), width: '100%' }}>⬆️ Wczytaj plik .json z laptopa</button>
                 </div>
               </div>
               {templates.length === 0
@@ -603,7 +584,6 @@ export default function AllegroDescriptionEditor() {
                   const typeMeta = sectionTypes.find(t => t.id === s.type);
                   return (
                     <div key={s.id} style={{ border: '1px solid #e5e7eb', borderRadius: 10, marginBottom: 12, overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,.05)' }}>
-                      {/* Nagłówek sekcji */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: '#f8fafc', borderBottom: '1px solid #e5e7eb' }}>
                         <span style={{ fontSize: 13, fontWeight: 600 }}>{typeMeta?.icon} {typeMeta?.name}</span>
                         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
@@ -613,15 +593,12 @@ export default function AllegroDescriptionEditor() {
                           <button onClick={() => deleteSection(s.id)} style={{ padding: '3px 7px', border: '1px solid #fca5a5', backgroundColor: '#fff1f2', borderRadius: 4, cursor: 'pointer', fontSize: 12, color: '#dc2626' }}>🗑️</button>
                         </div>
                       </div>
-
-                      {/* Kolor tła */}
                       <div style={{ padding: '6px 12px', backgroundColor: '#fafafa', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <label style={{ fontSize: 12, color: '#6b7280' }}>Kolor tła:</label>
                         <input type="color" value={s.backgroundColor} onChange={e => updateSection(s.id, 'backgroundColor', e.target.value)} style={{ width: 32, height: 24, borderRadius: 4, border: '1px solid #d1d5db', cursor: 'pointer', padding: 0 }} />
                         <span style={{ fontSize: 11, color: '#9ca3af' }}>{s.backgroundColor}</span>
                       </div>
 
-                      {/* Treść sekcji */}
                       <div style={{ padding: 12, backgroundColor: s.backgroundColor }}>
 
                         {s.type === 'text-only' && <TextEditor sectionId={s.id} value={s.text} onChange={v => updateSection(s.id, 'text', v)} />}
@@ -665,12 +642,7 @@ export default function AllegroDescriptionEditor() {
                               try { const u = new URL(s.youtubeVideo.url); vid = u.hostname.includes('youtu.be') ? u.pathname.slice(1) : u.searchParams.get('v') || ''; } catch (e) {}
                               return vid ? (
                                 <div style={{ position: 'relative', paddingBottom: '40%', height: 0, overflow: 'hidden', borderRadius: 8 }}>
-                                  <iframe
-                                    src={`https://www.youtube.com/embed/${vid}`}
-                                    title="YouTube video preview"
-                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                                    allowFullScreen
-                                  />
+                                  <iframe src={`https://www.youtube.com/embed/${vid}`} title="YouTube video preview" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }} allowFullScreen />
                                 </div>
                               ) : null;
                             })()}
@@ -683,38 +655,41 @@ export default function AllegroDescriptionEditor() {
 
                         {s.type.startsWith('usp-') && s.uspItems && (
                           <div>
-                            <p style={{ margin: '0 0 10px', fontSize: 12, color: '#6b7280' }}>
-                              Na desktopie: 2 kafelki obok siebie, układ 7/10 zdjęcie + 3/10 tekst.
-                            </p>
+                            <p style={{ margin: '0 0 10px', fontSize: 12, color: '#6b7280' }}>Na desktopie: 2 kafelki obok siebie, układ 7/10 zdjęcie + 3/10 tekst.</p>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10, marginBottom: 12 }}>
                               {s.uspItems.map((item, idx) => (
-                                <USPItemEditor
-                                  key={item.id} item={item} index={idx}
+                                <USPItemEditor key={item.id} item={item} index={idx}
                                   onUpdate={updated => updateUSPItem(s.id, item.id, updated)}
-                                  onDelete={() => deleteUSPItem(s.id, item.id)}
-                                />
+                                  onDelete={() => deleteUSPItem(s.id, item.id)} />
                               ))}
                             </div>
                             <button onClick={() => addUSPItem(s.id)} style={btn('#8b5cf6', true)}>+ Dodaj zaletę</button>
                           </div>
                         )}
 
+                        {/* ─── SIATKA IKON – nowy styl kart ─── */}
                         {s.type === 'icons-grid' && s.icons && (
                           <div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginBottom: 10 }}>
+                            <p style={{ margin: '0 0 10px', fontSize: 12, color: '#6b7280' }}>
+                              Karty: obrazek u góry, tekst poniżej. Mobile: 1 kolumna · Tablet: 2 · Desktop: 4.
+                            </p>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, marginBottom: 10 }}>
                               {s.icons.map((icon, idx) => (
-                                <div key={icon.id} style={{ width: 160, padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, backgroundColor: 'white', position: 'relative' }}>
-                                  <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.filter((_, i) => i !== idx) } : sec))} style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 18, height: 18, cursor: 'pointer', fontSize: 12, lineHeight: 1 }}>×</button>
-                                  <div style={{ textAlign: 'center', marginBottom: 6 }}>
+                                <div key={icon.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, backgroundColor: 'white', overflow: 'hidden', position: 'relative' }}>
+                                  <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.filter((_, i) => i !== idx) } : sec))} style={{ position: 'absolute', top: 6, right: 6, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 13, lineHeight: 1, zIndex: 1 }}>×</button>
+                                  {/* Podgląd obrazka / emoji */}
+                                  <div style={{ backgroundColor: '#f9fafb', padding: '14px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 90 }}>
                                     {icon.imagePreview
-                                      ? <img src={icon.imagePreview} alt="" style={{ width: 50, height: 50, borderRadius: 6, objectFit: 'cover' }} />
-                                      : <input type="text" value={icon.icon} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, icon: e.target.value } : ic) } : sec))} style={{ fontSize: 32, textAlign: 'center', width: '100%', border: 'none', background: 'transparent' }} />
+                                      ? <img src={icon.imagePreview} alt="" style={{ maxWidth: '100%', maxHeight: 80, objectFit: 'contain' }} />
+                                      : <input type="text" value={icon.icon} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, icon: e.target.value } : ic) } : sec))} style={{ fontSize: 36, textAlign: 'center', width: '100%', border: 'none', background: 'transparent', cursor: 'text' }} />
                                     }
                                   </div>
-                                  <input type="file" accept="image/*" onChange={e => { const f = e.target.files[0]; if (f) { const url = URL.createObjectURL(f); setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, image: f.name, imagePreview: url } : ic) } : sec)); }}} style={{ display: 'none' }} ref={el => { if (el) fileInputRefs.current[`${s.id}-icon-${idx}`] = el; }} />
-                                  <button onClick={() => fileInputRefs.current[`${s.id}-icon-${idx}`]?.click()} style={{ width: '100%', padding: 4, backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 10, marginBottom: 6 }}>📸 Zmień zdjęcie</button>
-                                  <input type="text" value={icon.title} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, title: e.target.value } : ic) } : sec))} placeholder="Tytuł" style={{ width: '100%', padding: 4, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 12, marginBottom: 4, boxSizing: 'border-box' }} />
-                                  <textarea value={icon.description} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, description: e.target.value } : ic) } : sec))} placeholder="Opis" style={{ width: '100%', padding: 4, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 11, minHeight: 40, resize: 'vertical', boxSizing: 'border-box' }} />
+                                  <div style={{ padding: '8px 12px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    <input type="file" accept="image/*" onChange={e => { const f = e.target.files[0]; if (f) { const url = URL.createObjectURL(f); setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, image: f.name, imagePreview: url } : ic) } : sec)); }}} style={{ display: 'none' }} ref={el => { if (el) fileInputRefs.current[`${s.id}-icon-${idx}`] = el; }} />
+                                    <button onClick={() => fileInputRefs.current[`${s.id}-icon-${idx}`]?.click()} style={{ padding: '3px 8px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 10 }}>📸 Zmień zdjęcie</button>
+                                    <input type="text" value={icon.title} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, title: e.target.value } : ic) } : sec))} placeholder="Tytuł" style={{ width: '100%', padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: 4, fontSize: 12, fontWeight: 600, boxSizing: 'border-box' }} />
+                                    <textarea value={icon.description} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.map((ic, i) => i === idx ? { ...ic, description: e.target.value } : ic) } : sec))} placeholder="Opis" style={{ width: '100%', padding: '4px 6px', border: '1px solid #d1d5db', borderRadius: 4, fontSize: 11, minHeight: 50, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                                  </div>
                                 </div>
                               ))}
                             </div>
