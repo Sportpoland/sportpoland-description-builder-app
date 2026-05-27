@@ -128,6 +128,10 @@ const EXPORT_CSS = `
 .sp-image-container{text-align:center}
 .sp-image-only{width:100%;height:auto;max-height:400px;border-radius:10px;object-fit:contain;display:block;margin:0 auto}
 
+/* ===== YOUTUBE INLINE ===== */
+.sp-youtube-container{position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden}
+.sp-youtube-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;border-radius:10px}
+
 /* ===== SIATKA IKON (styl kart USP) ===== */
 .sp-icons-grid{display:grid;grid-template-columns:1fr;gap:15px;width:100%}
 .sp-icon-item{background:#fff;border-radius:15px;overflow:hidden;display:flex;flex-direction:column}
@@ -154,10 +158,6 @@ const EXPORT_CSS = `
 .sp-comparison-table td:first-child{font-weight:600}
 .sp-product-header{text-align:center}
 .sp-product-image{width:100px;height:100px;object-fit:cover;border-radius:8px;margin:0 auto 8px;display:block}
-
-/* ===== YOUTUBE ===== */
-.sp-youtube-container{position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden}
-.sp-youtube-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;border-radius:10px}
 
 /* ===== USP ===== */
 .sp-usp-grid{display:grid;grid-template-columns:1fr;gap:15px}
@@ -235,6 +235,9 @@ export default function AllegroDescriptionEditor() {
     { id: 'image-only',       name: 'Samo zdjęcie',           icon: '🖼️', group: 'Podstawowe' },
     { id: 'two-images',       name: '2 zdjęcia obok siebie',  icon: '▣',  group: 'Podstawowe' },
     { id: 'youtube-video',    name: 'Film YouTube',            icon: '▶️', group: 'Podstawowe' },
+    // ── NOWE: video + tekst obok siebie ──
+    { id: 'video-left',       name: 'Video ← Tekst',          icon: '▶◧', group: 'Podstawowe' },
+    { id: 'video-right',      name: 'Tekst → Video',          icon: '◨▶', group: 'Podstawowe' },
     { id: 'usp-2',            name: 'USP – 2 zalety',         icon: '⬛⬛',group: 'USP' },
     { id: 'usp-4',            name: 'USP – 4 zalety',         icon: '⊞',  group: 'USP' },
     { id: 'usp-6',            name: 'USP – 6 zalet',          icon: '⊟',  group: 'USP' },
@@ -272,10 +275,13 @@ export default function AllegroDescriptionEditor() {
       icons: type === 'icons-grid' ? [{ id: 1, icon: '✓', title: 'Tytuł', description: 'Opis', image: '', imagePreview: '' }] : undefined,
       features: type === 'features-grid' ? [{ id: 1, icon: '🔇', title: 'Funkcja 1', description: 'Opis 1', image: '', imagePreview: '' }] : undefined,
       comparisonTable: type === 'comparison-table' ? {
-        products: [{ id: 1, name: 'Produkt 1', image: '', imagePreview: '', backgroundColor: '#fff' }],
-        attributes: [{ id: 1, name: 'Cena', values: [{ text: '', textAlign: 'left', fontWeight: 'normal' }] }]
+        tableTitle: '',
+        products: [{ id: 1, name: 'Produkt 1', image: '', imagePreview: '', backgroundColor: '#fff', url: '', isHighlighted: false, highlightColor: '#e8f4fd' }],
+        attributes: [{ id: 1, name: 'Cecha', values: [{ text: '', textAlign: 'left', fontWeight: 'normal' }] }]
       } : undefined,
-      youtubeVideo: type === 'youtube-video' ? { url: '', autoplay: false, startTime: 0 } : undefined,
+      // youtube-video = standalone, video-left/video-right = obok tekstu
+      youtubeVideo: (type === 'youtube-video' || type === 'video-left' || type === 'video-right')
+        ? { url: '', autoplay: false, startTime: 0 } : undefined,
       uspItems: type.startsWith('usp-') ? makeUSPItems(parseInt(type.split('-')[1])) : undefined,
     };
     setSections(prev => { const ns = [...prev, newSec]; saveToHistory(ns); return ns; });
@@ -328,7 +334,16 @@ export default function AllegroDescriptionEditor() {
       icons: s.icons?.map(i => ({ ...i, imagePreview: '' })),
       features: s.features?.map(f => ({ ...f, imagePreview: '' })),
       uspItems: s.uspItems?.map(u => ({ ...u, imagePreview: '' })),
-      comparisonTable: s.comparisonTable ? { ...s.comparisonTable, products: s.comparisonTable.products.map(p => ({ ...p, imagePreview: '' })) } : undefined
+      comparisonTable: s.comparisonTable ? {
+        ...s.comparisonTable,
+        tableTitle: s.comparisonTable.tableTitle || '',
+        products: s.comparisonTable.products.map(p => ({
+          ...p, imagePreview: '',
+          url: p.url || '',
+          isHighlighted: p.isHighlighted || false,
+          highlightColor: p.highlightColor || '#e8f4fd'
+        }))
+      } : undefined
     }));
     setHistory(prev => [...prev, { sections: JSON.parse(JSON.stringify(sections)), productBrand, productCode }]);
     setCurrentStep(prev => prev + 1);
@@ -394,32 +409,56 @@ export default function AllegroDescriptionEditor() {
     return `<div class="sp-container sp-usp" style="--bg-color:${s.backgroundColor};">\n<div class="sp-usp-grid">${items}</div>\n</div>\n`;
   }, [generateImagePath]);
 
+  // ─── helper: wyciąga video ID z URL YouTube ───────────────────────────────
+  const extractYouTubeId = (url) => {
+    if (!url) return '';
+    try {
+      const u = new URL(url);
+      return u.hostname.includes('youtu.be') ? u.pathname.slice(1) : u.searchParams.get('v') || '';
+    } catch (e) { return ''; }
+  };
+
   const generateHTML = useCallback((preview = false) => {
     let html = EXPORT_CSS;
     sections.forEach(s => {
       const bg = `--bg-color:${s.backgroundColor};`;
+
       if (s.type === 'text-only') {
         html += `<div class="sp-container" style="${bg}">\n<div class="sp-text">${s.text || ''}</div>\n</div>\n`;
+
       } else if (s.type === 'image-left' || s.type === 'image-right') {
         const src = preview ? s.imagePreview1 : generateImagePath(s.image1);
         const cls = s.type === 'image-right' ? 'sp-flex reverse' : 'sp-flex';
         html += `<div class="sp-container" style="${bg}">\n<div class="${cls}">\n<div class="sp-image-container">${(s.image1 || s.imagePreview1) ? `<img class="sp-image" src="${src}" alt="${generateAltText(s.image1)}" border="0">` : ''}</div>\n<div><div class="sp-text">${s.text || ''}</div></div>\n</div>\n</div>\n`;
+
       } else if (s.type === 'image-only') {
         const src = preview ? s.imagePreview1 : generateImagePath(s.image1);
         html += `<div class="sp-container" style="${bg}">${(s.image1 || s.imagePreview1) ? `<img class="sp-image-only" src="${src}" alt="${generateAltText(s.image1)}" border="0">` : ''}</div>\n`;
+
       } else if (s.type === 'two-images') {
         const s1 = preview ? s.imagePreview1 : generateImagePath(s.image1);
         const s2 = preview ? s.imagePreview2 : generateImagePath(s.image2);
         html += `<div class="sp-container" style="${bg}">\n<div class="sp-flex">\n<div style="text-align:center">${(s.image1 || s.imagePreview1) ? `<img class="sp-image" style="max-width:none;width:100%" src="${s1}" alt="${generateAltText(s.image1)}" border="0">` : ''}</div>\n<div style="text-align:center">${(s.image2 || s.imagePreview2) ? `<img class="sp-image" style="max-width:none;width:100%" src="${s2}" alt="${generateAltText(s.image2)}" border="0">` : ''}</div>\n</div>\n</div>\n`;
+
       } else if (s.type === 'youtube-video' && s.youtubeVideo?.url) {
-        let vid = '';
-        try { const u = new URL(s.youtubeVideo.url); vid = u.hostname.includes('youtu.be') ? u.pathname.slice(1) : u.searchParams.get('v') || ''; } catch (e) {}
+        const vid = extractYouTubeId(s.youtubeVideo.url);
         if (vid) {
           const params = [s.youtubeVideo.autoplay && 'autoplay=1', s.youtubeVideo.startTime > 0 && `start=${s.youtubeVideo.startTime}`].filter(Boolean).join('&');
           html += `<div class="sp-container" style="${bg}">\n<div class="sp-youtube-container"><iframe title="YouTube video player" src="https://www.youtube.com/embed/${vid}${params ? '?' + params : ''}" allowfullscreen="allowfullscreen"></iframe></div>\n</div>\n`;
         }
+
+      // ── NOWE: video-left i video-right ──────────────────────────────────────
+      } else if ((s.type === 'video-left' || s.type === 'video-right') && s.youtubeVideo) {
+        const vid = extractYouTubeId(s.youtubeVideo.url);
+        const cls = s.type === 'video-right' ? 'sp-flex reverse' : 'sp-flex';
+        const videoHtml = vid
+          ? `<div class="sp-youtube-container"><iframe title="YouTube video player" src="https://www.youtube.com/embed/${vid}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="allowfullscreen"></iframe></div>`
+          : '';
+        html += `<div class="sp-container" style="${bg}">\n<div class="${cls}">\n<div class="sp-image-container">${videoHtml}</div>\n<div><div class="sp-text">${s.text || ''}</div></div>\n</div>\n</div>\n`;
+
       } else if (s.type.startsWith('usp-')) {
         html += generateUSPHtml(s, preview);
+
       } else if (s.type === 'icons-grid' && s.icons) {
         const icons = s.icons.map(i => {
           const src = preview ? i.imagePreview : generateImagePath(i.image);
@@ -429,20 +468,43 @@ export default function AllegroDescriptionEditor() {
           return `<div class="sp-icon-item">${media}<div class="sp-icon-text"><h4>${i.title}</h4><p class="sp-icon-desc">${i.description}</p></div></div>`;
         }).join('\n');
         html += `<div class="sp-container" style="${bg}">\n<div class="sp-icons-grid">${icons}</div>\n</div>\n`;
+
       } else if (s.type === 'features-grid' && s.features) {
         const feats = s.features.map(f => {
           const src = preview ? f.imagePreview : generateImagePath(f.image);
           return `<div class="sp-feature-item">${(f.image || f.imagePreview) ? `<img src="${src}" class="sp-feature-image" alt="${f.title}">` : `<div class="sp-feature-icon">${f.icon}</div>`}<div class="sp-feature-content"><h4>${f.title}</h4><p>${f.description}</p></div></div>`;
         }).join('');
         html += `<div class="sp-container" style="${bg}">\n<div class="sp-features-grid">${feats}</div>\n</div>\n`;
+
       } else if (s.type === 'comparison-table' && s.comparisonTable) {
         const t = s.comparisonTable;
+        // tytuł tabeli
+        const titleHtml = t.tableTitle
+          ? `<h2 style="margin-top:0;text-align:left;">${t.tableTitle}</h2>\n`
+          : '';
+        // nagłówki produktów z linkami i wyróżnieniem
         const headers = t.products.map(p => {
           const src = preview ? p.imagePreview : generateImagePath(p.image);
-          return `<th class="sp-product-header" style="background-color:${p.backgroundColor}">${(p.image || p.imagePreview) ? `<img src="${src}" class="sp-product-image" alt="${p.name}">` : ''}<div>${p.name}</div></th>`;
+          const bgColor = p.isHighlighted ? (p.highlightColor || '#e8f4fd') : (p.backgroundColor || '#fff');
+          const imgTag = (p.image || p.imagePreview)
+            ? `<img style="margin:0 auto;" class="sp-product-image" src="${src}" alt="${p.name}" border="0">`
+            : '';
+          const imgWrapped = p.url ? `<a href="${p.url}" target="_blank" rel="noopener">${imgTag}</a>` : imgTag;
+          const nameWrapped = p.url
+            ? `<a href="${p.url}" target="_blank" rel="noopener"><strong>${p.name}</strong></a>`
+            : `<strong>${p.name}</strong>`;
+          const badge = p.isHighlighted ? '<br>(wybrany)' : '';
+          return `<th class="sp-product-header" style="background-color:${bgColor};text-align:center;">${imgWrapped}<div>${nameWrapped}${badge}</div></th>`;
         }).join('');
-        const rows = t.attributes.map(a => `<tr><td>${a.name}</td>${a.values.map((v, i) => `<td style="text-align:${v.textAlign};font-weight:${v.fontWeight};background-color:${t.products[i]?.backgroundColor || '#fff'}">${v.text}</td>`).join('')}</tr>`).join('');
-        html += `<div class="sp-container" style="${bg}">\n<div class="sp-comparison-table"><table><thead><tr><th></th>${headers}</tr></thead><tbody>${rows}</tbody></table></div>\n</div>\n`;
+        // wiersze – uwzględniają kolor wyróżnienia
+        const rows = t.attributes.map(a =>
+          `<tr><td>${a.name}</td>${a.values.map((v, i) => {
+            const p = t.products[i];
+            const bgColor = p?.isHighlighted ? (p?.highlightColor || '#e8f4fd') : (p?.backgroundColor || '#fff');
+            return `<td style="text-align:${v.textAlign};font-weight:${v.fontWeight};background-color:${bgColor}">${v.text}</td>`;
+          }).join('')}</tr>`
+        ).join('');
+        html += `<div class="sp-container" style="${bg}">\n${titleHtml}<div class="sp-comparison-table"><table><thead><tr><th style="background-color:${s.backgroundColor}"></th>${headers}</tr></thead><tbody>${rows}</tbody></table></div>\n</div>\n`;
       }
     });
     return html;
@@ -480,6 +542,18 @@ export default function AllegroDescriptionEditor() {
 
   const groupColors = { Podstawowe: '#3b82f6', USP: '#8b5cf6', Zaawansowane: '#10b981' };
   const groups = [...new Set(sectionTypes.map(t => t.group))];
+
+  // ─── helper: inline preview iframe YT ────────────────────────────────────
+  const renderYTPreview = (url) => {
+    const vid = extractYouTubeId(url);
+    if (!vid) return null;
+    return (
+      <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 8 }}>
+        <iframe src={`https://www.youtube.com/embed/${vid}`} title="YouTube video preview"
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }} allowFullScreen />
+      </div>
+    );
+  };
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', fontFamily: 'system-ui, Arial, sans-serif' }}>
@@ -637,19 +711,35 @@ export default function AllegroDescriptionEditor() {
                         {s.type === 'youtube-video' && s.youtubeVideo && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             <input type="text" value={s.youtubeVideo.url} onChange={e => updateSection(s.id, 'youtubeVideo', { ...s.youtubeVideo, url: e.target.value })} placeholder="URL YouTube (np. https://www.youtube.com/watch?v=...)" style={{ padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14 }} />
-                            {s.youtubeVideo.url && (() => {
-                              let vid = '';
-                              try { const u = new URL(s.youtubeVideo.url); vid = u.hostname.includes('youtu.be') ? u.pathname.slice(1) : u.searchParams.get('v') || ''; } catch (e) {}
-                              return vid ? (
-                                <div style={{ position: 'relative', paddingBottom: '40%', height: 0, overflow: 'hidden', borderRadius: 8 }}>
-                                  <iframe src={`https://www.youtube.com/embed/${vid}`} title="YouTube video preview" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }} allowFullScreen />
-                                </div>
-                              ) : null;
-                            })()}
+                            {s.youtubeVideo.url && renderYTPreview(s.youtubeVideo.url)}
                             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                               <input type="checkbox" checked={s.youtubeVideo.autoplay} onChange={e => updateSection(s.id, 'youtubeVideo', { ...s.youtubeVideo, autoplay: e.target.checked })} />
                               Autoplay
                             </label>
+                          </div>
+                        )}
+
+                        {/* ── NOWE: video-left i video-right ─────────────────────────────── */}
+                        {(s.type === 'video-left' || s.type === 'video-right') && s.youtubeVideo && (
+                          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                            {/* kolumna z video */}
+                            <div style={{ flex: 1, minWidth: 200 }}>
+                              <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                                {s.type === 'video-left' ? '◀ Film YouTube (lewa strona)' : 'Film YouTube (prawa strona) ▶'}
+                              </p>
+                              <input
+                                type="text" value={s.youtubeVideo.url}
+                                onChange={e => updateSection(s.id, 'youtubeVideo', { ...s.youtubeVideo, url: e.target.value })}
+                                placeholder="URL YouTube (np. https://www.youtube.com/watch?v=...)"
+                                style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, boxSizing: 'border-box', marginBottom: 8 }}
+                              />
+                              {s.youtubeVideo.url && renderYTPreview(s.youtubeVideo.url)}
+                            </div>
+                            {/* kolumna z tekstem */}
+                            <div style={{ flex: 2, minWidth: 200 }}>
+                              <p style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 600, color: '#374151' }}>Tekst obok:</p>
+                              <TextEditor sectionId={s.id} value={s.text} onChange={v => updateSection(s.id, 'text', v)} />
+                            </div>
                           </div>
                         )}
 
@@ -677,7 +767,6 @@ export default function AllegroDescriptionEditor() {
                               {s.icons.map((icon, idx) => (
                                 <div key={icon.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, backgroundColor: 'white', overflow: 'hidden', position: 'relative' }}>
                                   <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, icons: sec.icons.filter((_, i) => i !== idx) } : sec))} style={{ position: 'absolute', top: 6, right: 6, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: 13, lineHeight: 1, zIndex: 1 }}>×</button>
-                                  {/* Podgląd obrazka / emoji */}
                                   <div style={{ backgroundColor: '#f9fafb', padding: '14px 14px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 90 }}>
                                     {icon.imagePreview
                                       ? <img src={icon.imagePreview} alt="" style={{ maxWidth: '100%', maxHeight: 80, objectFit: 'contain' }} />
@@ -722,27 +811,76 @@ export default function AllegroDescriptionEditor() {
                           </div>
                         )}
 
+                        {/* ── TABELA PORÓWNAWCZA – rozbudowana wersja ─────────────────────── */}
                         {s.type === 'comparison-table' && s.comparisonTable && (
                           <div>
+                            {/* Tytuł tabeli */}
+                            <div style={{ marginBottom: 12 }}>
+                              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Tytuł tabeli (H2, opcjonalny):</label>
+                              <input
+                                type="text"
+                                value={s.comparisonTable.tableTitle || ''}
+                                onChange={e => setSections(prev => prev.map(sec => sec.id === s.id
+                                  ? { ...sec, comparisonTable: { ...sec.comparisonTable, tableTitle: e.target.value } }
+                                  : sec))}
+                                placeholder="np. Porównanie wariantów produktu…"
+                                style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, boxSizing: 'border-box', fontWeight: 600 }}
+                              />
+                            </div>
+
                             <h4 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 8px', color: '#374151' }}>Produkty:</h4>
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
                               {s.comparisonTable.products.map((prod, pIdx) => (
-                                <div key={prod.id} style={{ width: 130, padding: 8, border: '1px solid #e5e7eb', borderRadius: 6, backgroundColor: 'white', position: 'relative' }}>
-                                  {s.comparisonTable.products.length > 1 && <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: sec.comparisonTable.products.filter((_, i) => i !== pIdx), attributes: sec.comparisonTable.attributes.map(a => ({ ...a, values: a.values.filter((_, i) => i !== pIdx) })) }} : sec))} style={{ position: 'absolute', top: 3, right: 3, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 16, height: 16, cursor: 'pointer', fontSize: 11, lineHeight: 1 }}>×</button>}
+                                <div key={prod.id} style={{
+                                  width: 150, padding: 8, border: `2px solid ${prod.isHighlighted ? (prod.highlightColor || '#e8f4fd') : '#e5e7eb'}`,
+                                  borderRadius: 6, backgroundColor: prod.isHighlighted ? (prod.highlightColor || '#e8f4fd') : 'white', position: 'relative'
+                                }}>
+                                  {prod.isHighlighted && (
+                                    <div style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', backgroundColor: '#f59e0b', color: 'white', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 10, whiteSpace: 'nowrap' }}>
+                                      ★ WYBRANY
+                                    </div>
+                                  )}
+                                  {s.comparisonTable.products.length > 1 && (
+                                    <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: sec.comparisonTable.products.filter((_, i) => i !== pIdx), attributes: sec.comparisonTable.attributes.map(a => ({ ...a, values: a.values.filter((_, i) => i !== pIdx) })) }} : sec))}
+                                      style={{ position: 'absolute', top: 3, right: 3, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 16, height: 16, cursor: 'pointer', fontSize: 11, lineHeight: 1 }}>×</button>
+                                  )}
+                                  {/* miniaturka */}
                                   <div style={{ width: 70, height: 70, margin: '0 auto 6px', border: '2px dashed #d1d5db', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                                     {prod.imagePreview ? <img src={prod.imagePreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 24, color: '#d1d5db' }}>📸</span>}
                                   </div>
                                   <input type="file" accept="image/*" onChange={e => { const f = e.target.files[0]; if (f) { const url = URL.createObjectURL(f); setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: sec.comparisonTable.products.map((p, i) => i === pIdx ? { ...p, image: f.name, imagePreview: url } : p) }} : sec)); }}} style={{ display: 'none' }} ref={el => { if (el) fileInputRefs.current[`${s.id}-prod-${pIdx}`] = el; }} />
-                                  <button onClick={() => fileInputRefs.current[`${s.id}-prod-${pIdx}`]?.click()} style={{ width: '100%', padding: 3, backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 10, marginBottom: 4 }}>📸</button>
+                                  <button onClick={() => fileInputRefs.current[`${s.id}-prod-${pIdx}`]?.click()} style={{ width: '100%', padding: 3, backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 10, marginBottom: 4 }}>📸 Zdjęcie</button>
+                                  {/* nazwa produktu */}
                                   <input type="text" value={prod.name} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: sec.comparisonTable.products.map((p, i) => i === pIdx ? { ...p, name: e.target.value } : p) }} : sec))} placeholder="Nazwa" style={{ width: '100%', padding: 4, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 11, textAlign: 'center', boxSizing: 'border-box', marginBottom: 4 }} />
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
-                                    <label style={{ fontSize: 10 }}>Kolor:</label>
-                                    <input type="color" value={prod.backgroundColor} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: sec.comparisonTable.products.map((p, i) => i === pIdx ? { ...p, backgroundColor: e.target.value } : p) }} : sec))} style={{ width: 22, height: 18, border: '1px solid #d1d5db', borderRadius: 3, cursor: 'pointer', padding: 0 }} />
-                                  </div>
+                                  {/* link do produktu */}
+                                  <input type="text" value={prod.url || ''} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: sec.comparisonTable.products.map((p, i) => i === pIdx ? { ...p, url: e.target.value } : p) }} : sec))} placeholder="URL produktu (opcjonalnie)" style={{ width: '100%', padding: 4, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 10, boxSizing: 'border-box', marginBottom: 4 }} />
+                                  {/* wyróżnij produkt */}
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, cursor: 'pointer', marginBottom: 4 }}>
+                                    <input type="checkbox" checked={prod.isHighlighted || false} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: sec.comparisonTable.products.map((p, i) => i === pIdx ? { ...p, isHighlighted: e.target.checked } : p) }} : sec))} />
+                                    <span style={{ fontWeight: 600 }}>★ Wyróżniony</span>
+                                  </label>
+                                  {/* kolor wyróżnienia */}
+                                  {prod.isHighlighted && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                                      <label style={{ fontSize: 10 }}>Kolor:</label>
+                                      <input type="color" value={prod.highlightColor || '#e8f4fd'} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: sec.comparisonTable.products.map((p, i) => i === pIdx ? { ...p, highlightColor: e.target.value } : p) }} : sec))} style={{ width: 28, height: 20, border: '1px solid #d1d5db', borderRadius: 3, cursor: 'pointer', padding: 0 }} />
+                                      <span style={{ fontSize: 9, color: '#6b7280' }}>{prod.highlightColor || '#e8f4fd'}</span>
+                                    </div>
+                                  )}
+                                  {/* kolor tła (gdy nie wyróżniony) */}
+                                  {!prod.isHighlighted && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+                                      <label style={{ fontSize: 10 }}>Kolor tła:</label>
+                                      <input type="color" value={prod.backgroundColor || '#fff'} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: sec.comparisonTable.products.map((p, i) => i === pIdx ? { ...p, backgroundColor: e.target.value } : p) }} : sec))} style={{ width: 22, height: 18, border: '1px solid #d1d5db', borderRadius: 3, cursor: 'pointer', padding: 0 }} />
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
-                            <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: [...sec.comparisonTable.products, { id: Date.now(), name: `Produkt ${sec.comparisonTable.products.length + 1}`, image: '', imagePreview: '', backgroundColor: '#fff' }], attributes: sec.comparisonTable.attributes.map(a => ({ ...a, values: [...a.values, { text: '', textAlign: 'left', fontWeight: 'normal' }] })) }} : sec))} style={{ ...btn('#3b82f6', true), marginBottom: 12 }}>+ Dodaj produkt</button>
+
+                            <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, products: [...sec.comparisonTable.products, { id: Date.now(), name: `Produkt ${sec.comparisonTable.products.length + 1}`, image: '', imagePreview: '', backgroundColor: '#fff', url: '', isHighlighted: false, highlightColor: '#e8f4fd' }], attributes: sec.comparisonTable.attributes.map(a => ({ ...a, values: [...a.values, { text: '', textAlign: 'left', fontWeight: 'normal' }] })) }} : sec))}
+                              style={{ ...btn('#3b82f6', true), marginBottom: 12 }}>+ Dodaj produkt</button>
+
                             <h4 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 8px', color: '#374151' }}>Atrybuty:</h4>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
                               {s.comparisonTable.attributes.map((attr, aIdx) => (
@@ -750,18 +888,24 @@ export default function AllegroDescriptionEditor() {
                                   <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, attributes: sec.comparisonTable.attributes.filter((_, i) => i !== aIdx) }} : sec))} style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: 16, height: 16, cursor: 'pointer', fontSize: 11, lineHeight: 1 }}>×</button>
                                   <input type="text" value={attr.name} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, attributes: sec.comparisonTable.attributes.map((a, i) => i === aIdx ? { ...a, name: e.target.value } : a) }} : sec))} placeholder="Nazwa atrybutu" style={{ padding: 4, border: '1px solid #d1d5db', borderRadius: 4, fontSize: 12, fontWeight: 600, marginBottom: 6, boxSizing: 'border-box', maxWidth: 200 }} />
                                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                    {attr.values.map((val, vIdx) => (
-                                      <div key={vIdx} style={{ flex: 1, minWidth: 130, border: '1px solid #e5e7eb', borderRadius: 4, padding: 4, backgroundColor: '#f9fafb' }}>
-                                        <label style={{ fontSize: 9, fontWeight: 600, display: 'block', marginBottom: 2, color: '#6b7280' }}>{s.comparisonTable.products[vIdx]?.name || `P${vIdx + 1}`}</label>
-                                        <textarea value={val.text} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, attributes: sec.comparisonTable.attributes.map((a, i) => i === aIdx ? { ...a, values: a.values.map((v, j) => j === vIdx ? { ...v, text: e.target.value } : v) } : a) }} : sec))} placeholder="Wartość" style={{ width: '100%', padding: 3, border: '1px solid #d1d5db', borderRadius: 3, fontSize: 11, minHeight: 35, resize: 'vertical', boxSizing: 'border-box', marginBottom: 3 }} />
-                                        <div style={{ display: 'flex', gap: 2 }}>
-                                          <select value={val.textAlign} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, attributes: sec.comparisonTable.attributes.map((a, i) => i === aIdx ? { ...a, values: a.values.map((v, j) => j === vIdx ? { ...v, textAlign: e.target.value } : v) } : a) }} : sec))} style={{ padding: 2, border: '1px solid #d1d5db', borderRadius: 3, fontSize: 9 }}>
-                                            <option value="left">⬅️</option><option value="center">⬌</option><option value="right">➡️</option>
-                                          </select>
-                                          <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, attributes: sec.comparisonTable.attributes.map((a, i) => i === aIdx ? { ...a, values: a.values.map((v, j) => j === vIdx ? { ...v, fontWeight: v.fontWeight === 'bold' ? 'normal' : 'bold' } : v) } : a) }} : sec))} style={{ padding: '2px 5px', border: '1px solid #d1d5db', borderRadius: 3, backgroundColor: val.fontWeight === 'bold' ? '#3b82f6' : 'white', color: val.fontWeight === 'bold' ? 'white' : 'black', cursor: 'pointer', fontSize: 9, fontWeight: 'bold' }}>B</button>
+                                    {attr.values.map((val, vIdx) => {
+                                      const prod = s.comparisonTable.products[vIdx];
+                                      const isHL = prod?.isHighlighted;
+                                      return (
+                                        <div key={vIdx} style={{ flex: 1, minWidth: 130, border: `1px solid ${isHL ? (prod?.highlightColor || '#e8f4fd') : '#e5e7eb'}`, borderRadius: 4, padding: 4, backgroundColor: isHL ? (prod?.highlightColor || '#e8f4fd') : '#f9fafb' }}>
+                                          <label style={{ fontSize: 9, fontWeight: 600, display: 'block', marginBottom: 2, color: isHL ? '#92400e' : '#6b7280' }}>
+                                            {isHL ? '★ ' : ''}{prod?.name || `P${vIdx + 1}`}
+                                          </label>
+                                          <textarea value={val.text} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, attributes: sec.comparisonTable.attributes.map((a, i) => i === aIdx ? { ...a, values: a.values.map((v, j) => j === vIdx ? { ...v, text: e.target.value } : v) } : a) }} : sec))} placeholder="Wartość" style={{ width: '100%', padding: 3, border: '1px solid #d1d5db', borderRadius: 3, fontSize: 11, minHeight: 35, resize: 'vertical', boxSizing: 'border-box', marginBottom: 3 }} />
+                                          <div style={{ display: 'flex', gap: 2 }}>
+                                            <select value={val.textAlign} onChange={e => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, attributes: sec.comparisonTable.attributes.map((a, i) => i === aIdx ? { ...a, values: a.values.map((v, j) => j === vIdx ? { ...v, textAlign: e.target.value } : v) } : a) }} : sec))} style={{ padding: 2, border: '1px solid #d1d5db', borderRadius: 3, fontSize: 9 }}>
+                                              <option value="left">⬅️</option><option value="center">⬌</option><option value="right">➡️</option>
+                                            </select>
+                                            <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, attributes: sec.comparisonTable.attributes.map((a, i) => i === aIdx ? { ...a, values: a.values.map((v, j) => j === vIdx ? { ...v, fontWeight: v.fontWeight === 'bold' ? 'normal' : 'bold' } : v) } : a) }} : sec))} style={{ padding: '2px 5px', border: '1px solid #d1d5db', borderRadius: 3, backgroundColor: val.fontWeight === 'bold' ? '#3b82f6' : 'white', color: val.fontWeight === 'bold' ? 'white' : 'black', cursor: 'pointer', fontSize: 9, fontWeight: 'bold' }}>B</button>
+                                          </div>
                                         </div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               ))}
@@ -769,6 +913,7 @@ export default function AllegroDescriptionEditor() {
                             <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, attributes: [...sec.comparisonTable.attributes, { id: Date.now(), name: 'Atrybut', values: Array(sec.comparisonTable.products.length).fill(null).map(() => ({ text: '', textAlign: 'left', fontWeight: 'normal' })) }] }} : sec))} style={btn('#3b82f6', true)}>+ Dodaj atrybut</button>
                           </div>
                         )}
+
                       </div>
                     </div>
                   );
