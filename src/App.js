@@ -134,7 +134,7 @@ const EXPORT_CSS = `
 
 /* ===== SIATKA IKON (styl kart USP) ===== */
 .sp-icons-grid{display:grid;grid-template-columns:1fr;gap:15px;width:100%}
-.sp-icon-item{background:#fff;border-radius:15px;overflow:hidden;display:flex;flex-direction:column}
+.sp-icon-item{background:var(--icon-card-bg, #fff);border-radius:15px;overflow:hidden;display:flex;flex-direction:column}
 .sp-icon-media{width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;line-height:0;padding:10px 10px 0}
 .sp-icon-emoji{font-size:40px;display:block;text-align:center;padding:10px 10px 0}
 .sp-icon-image{width:auto;height:auto;max-width:100%;max-height:120px;display:block;object-fit:contain;object-position:center}
@@ -296,6 +296,7 @@ export default function AllegroDescriptionEditor() {
       text: '', image1: '', image2: '', imagePreview1: '', imagePreview2: '',
       backgroundColor: '#f6f6f6',
       icons: type === 'icons-grid' ? [{ id: 1, icon: '✓', title: 'Tytuł', description: 'Opis', image: '', imagePreview: '' }] : undefined,
+      iconsCardBackground: type === 'icons-grid' ? true : undefined,
       features: type === 'features-grid' ? [{ id: 1, icon: '🔇', title: 'Funkcja 1', description: 'Opis 1', image: '', imagePreview: '' }] : undefined,
       comparisonTable: type === 'comparison-table' ? {
         tableTitle: '',
@@ -507,7 +508,8 @@ export default function AllegroDescriptionEditor() {
             : `<span class="sp-icon-emoji">${i.icon}</span>`;
           return `<div class="sp-icon-item">${media}<div class="sp-icon-text"><h4>${i.title}</h4><p class="sp-icon-desc">${i.description}</p></div></div>`;
         }).join('\n');
-        html += `<div class="sp-container" style="${bg}">\n<div class="sp-icons-grid">${icons}</div>\n</div>\n`;
+        const iconCardBg = s.iconsCardBackground === false ? 'transparent' : '#fff';
+        html += `<div class="sp-container" style="${bg} --icon-card-bg:${iconCardBg};">\n<div class="sp-icons-grid">${icons}</div>\n</div>\n`;
 
       } else if (s.type === 'features-grid' && s.features) {
         const feats = s.features.map(f => {
@@ -859,6 +861,14 @@ export default function AllegroDescriptionEditor() {
                             <p style={{ margin: '0 0 10px', fontSize: 12, color: '#6b7280' }}>
                               Karty: obrazek u góry, tekst poniżej. Mobile: 1 kolumna · Tablet: 2 · Desktop: 4.
                             </p>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#374151', marginBottom: 10, cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={s.iconsCardBackground !== false}
+                                onChange={e => updateSection(s.id, 'iconsCardBackground', e.target.checked)}
+                              />
+                              Białe tło pod każdą ikoną
+                            </label>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, marginBottom: 10 }}>
                               {s.icons.map((icon, idx) => (
                                 <div key={icon.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, backgroundColor: 'white', overflow: 'hidden', position: 'relative' }}>
