@@ -168,6 +168,27 @@ const EXPORT_CSS = `
 .sp-usp-text h2,.sp-usp-text h3{margin:0 0 8px}
 .sp-usp-text p{margin:0;line-height:1.5}
 
+/* ===== PORÓWNANIE WARIANTÓW (upsell/downsell) ===== */
+.sp-cmp-comparison{background:var(--bg-color,#f6f6f6);margin-bottom:20px;padding:20px;border-radius:15px}
+.sp-cmp-comparison h2{margin:0 0 12px;font-size:24px;line-height:1.25}
+.sp-cmp-intro{margin:0 0 20px;line-height:1.5}
+.sp-cmp-grid{display:grid;grid-template-columns:1fr;gap:15px}
+.sp-cmp-card{position:relative;display:flex;flex-direction:column;background:#fff;padding:20px;border:1px solid #e5e5e5;border-radius:12px}
+.sp-cmp-card.is-current{border:2px solid #DA251D}
+.sp-cmp-card.is-recommended{border:2px solid #2F2F2F}
+.sp-cmp-badge{display:inline-block;align-self:flex-start;margin-bottom:12px;padding:5px 10px;border-radius:20px;background:#eeeeee;font-size:12px;font-weight:700;line-height:1.2}
+.sp-cmp-card.is-current .sp-cmp-badge{background:#DA251D;color:#fff}
+.sp-cmp-card.is-recommended .sp-cmp-badge{background:#2F2F2F;color:#fff}
+.sp-cmp-card h3{margin:0 0 8px;font-size:21px}
+.sp-cmp-subtitle{margin:0 0 12px;font-size:16px;font-weight:700}
+.sp-cmp-card p{margin:0 0 12px;line-height:1.5}
+.sp-cmp-card ul{margin:0 0 18px;padding-left:20px;line-height:1.5}
+.sp-cmp-card li{margin-bottom:6px}
+.sp-cmp-link{display:inline-flex;justify-content:center;align-items:center;margin-top:auto;padding:11px 16px;border:1px solid #2F2F2F;border-radius:8px;color:#2F2F2F;font-weight:700;text-decoration:none}
+.sp-cmp-card.is-current .sp-cmp-link{border-color:#DA251D;background:#DA251D;color:#fff}
+.sp-cmp-card.is-recommended .sp-cmp-link{background:#2F2F2F;color:#fff}
+.sp-cmp-summary{margin-top:20px;padding:15px;background:#fff;border-radius:10px;line-height:1.5}
+
 @media(max-width:767px){
   .sp-flex{flex-direction:column}
   .sp-flex .sp-image-container{order:1}
@@ -189,6 +210,7 @@ const EXPORT_CSS = `
   .sp-usp-item{height:380px;display:grid;grid-template-rows:7fr 3fr}
   .sp-usp-text{padding:18px 20px;display:flex;flex-direction:column;justify-content:flex-start}
   .sp-icons-grid{grid-template-columns:1fr 1fr;gap:20px}
+  .sp-cmp-grid{grid-template-columns:repeat(auto-fit, minmax(220px, 1fr))}
 }
 @media(min-width:1024px){
   .sp-container{padding:25px}
@@ -244,6 +266,7 @@ export default function AllegroDescriptionEditor() {
     { id: 'icons-grid',       name: 'Siatka ikon',            icon: '✦',  group: 'Zaawansowane' },
     { id: 'features-grid',    name: 'Funkcje 2×2',            icon: '🔲', group: 'Zaawansowane' },
     { id: 'comparison-table', name: 'Tabela porównawcza',     icon: '📊', group: 'Zaawansowane' },
+    { id: 'comparison-cards', name: 'Porównanie wariantów (upsell/downsell)', icon: '🗂️', group: 'Zaawansowane' },
   ];
 
   const makeUSPItems = (count) =>
@@ -279,6 +302,13 @@ export default function AllegroDescriptionEditor() {
         products: [{ id: 1, name: 'Produkt 1', image: '', imagePreview: '', backgroundColor: '#fff', url: '', isHighlighted: false, highlightColor: '#e8f4fd' }],
         attributes: [{ id: 1, name: 'Cecha', values: [{ text: '', textAlign: 'left', fontWeight: 'normal' }] }]
       } : undefined,
+      cards: type === 'comparison-cards' ? [
+        { id: 1, badge: 'current', title: 'Wariant A', subtitle: '', description: '', bullets: [''], linkUrl: '', linkText: '' },
+        { id: 2, badge: 'recommended', title: 'Wariant B', subtitle: '', description: '', bullets: [''], linkUrl: '', linkText: '' }
+      ] : undefined,
+      heading: type === 'comparison-cards' ? 'Jaką wersję wybrać?' : undefined,
+      intro: type === 'comparison-cards' ? '' : undefined,
+      summary: type === 'comparison-cards' ? '' : undefined,
       // youtube-video = standalone, video-left/video-right = obok tekstu
       youtubeVideo: (type === 'youtube-video' || type === 'video-left' || type === 'video-right')
         ? { url: '', autoplay: false, startTime: 0 } : undefined,
@@ -409,6 +439,16 @@ export default function AllegroDescriptionEditor() {
     return `<div class="sp-container sp-usp" style="--bg-color:${s.backgroundColor};">\n<div class="sp-usp-grid">${items}</div>\n</div>\n`;
   }, [generateImagePath]);
 
+  const generateComparisonCardsHtml = useCallback((s) => {
+    const cmpCardsHtml = (s.cards || []).map(card => {
+      const badgeClass = card.badge === 'current' ? ' is-current' : card.badge === 'recommended' ? ' is-recommended' : '';
+      const badgeLabel = card.badge === 'current' ? 'Aktualnie oglądasz' : card.badge === 'recommended' ? 'Polecany wariant' : '';
+      const bulletsHtml = (card.bullets || []).filter(b => b.trim()).map(b => `<li>${b}</li>`).join('');
+      return `<article class="sp-cmp-card${badgeClass}">${badgeLabel ? `<span class="sp-cmp-badge">${badgeLabel}</span>` : ''}<h3>${card.title}</h3>${card.subtitle ? `<p class="sp-cmp-subtitle">${card.subtitle}</p>` : ''}${card.description ? `<p>${card.description}</p>` : ''}${bulletsHtml ? `<ul>${bulletsHtml}</ul>` : ''}${card.linkUrl ? `<a class="sp-cmp-link" href="${card.linkUrl}">${card.linkText || 'Zobacz produkt'}</a>` : ''}</article>`;
+    }).join('\n');
+    return `<section class="sp-cmp-comparison" style="--bg-color:${s.backgroundColor};">\n${s.heading ? `<h2>${s.heading}</h2>` : ''}\n${s.intro ? `<p class="sp-cmp-intro">${s.intro}</p>` : ''}\n<div class="sp-cmp-grid">${cmpCardsHtml}</div>\n${s.summary ? `<div class="sp-cmp-summary">${s.summary}</div>` : ''}\n</section>\n`;
+  }, []);
+
   // ─── helper: wyciąga video ID z URL YouTube ───────────────────────────────
   const extractYouTubeId = (url) => {
     if (!url) return '';
@@ -505,10 +545,13 @@ export default function AllegroDescriptionEditor() {
           }).join('')}</tr>`
         ).join('');
         html += `<div class="sp-container" style="${bg}">\n${titleHtml}<div class="sp-comparison-table"><table><thead><tr><th style="background-color:${s.backgroundColor}"></th>${headers}</tr></thead><tbody>${rows}</tbody></table></div>\n</div>\n`;
+
+      } else if (s.type === 'comparison-cards' && s.cards) {
+        html += generateComparisonCardsHtml(s);
       }
     });
     return html;
-  }, [sections, generateImagePath, generateAltText, generateUSPHtml]);
+  }, [sections, generateImagePath, generateAltText, generateUSPHtml, generateComparisonCardsHtml]);
 
   const copyHTML = useCallback(async () => {
     try { await navigator.clipboard.writeText(generateHTML()); alert('✅ Skopiowano HTML!'); }
@@ -532,6 +575,56 @@ export default function AllegroDescriptionEditor() {
   const addUSPItem = useCallback((sectionId) => {
     setSections(prev => prev.map(s => s.id === sectionId
       ? { ...s, uspItems: [...(s.uspItems || []), { id: Date.now(), image: '', imagePreview: '', title: 'Nowa zaleta', description: 'Opis...' }] } : s));
+  }, []);
+
+  const updateComparisonCard = useCallback((sectionId, cardIndex, field, value) => {
+    setSections(prev => prev.map(s => {
+      if (s.id !== sectionId) return s;
+      const newCards = [...s.cards];
+      newCards[cardIndex] = { ...newCards[cardIndex], [field]: value };
+      return { ...s, cards: newCards };
+    }));
+  }, []);
+
+  const addComparisonCard = useCallback((sectionId) => {
+    setSections(prev => prev.map(s => s.id === sectionId
+      ? { ...s, cards: [...s.cards, { id: Date.now(), badge: 'none', title: 'Nowy wariant', subtitle: '', description: '', bullets: [''], linkUrl: '', linkText: '' }] }
+      : s));
+  }, []);
+
+  const removeComparisonCard = useCallback((sectionId, cardIndex) => {
+    setSections(prev => prev.map(s => s.id === sectionId
+      ? { ...s, cards: s.cards.filter((_, i) => i !== cardIndex) }
+      : s));
+  }, []);
+
+  const updateComparisonBullet = useCallback((sectionId, cardIndex, bulletIndex, value) => {
+    setSections(prev => prev.map(s => {
+      if (s.id !== sectionId) return s;
+      const newCards = [...s.cards];
+      const newBullets = [...newCards[cardIndex].bullets];
+      newBullets[bulletIndex] = value;
+      newCards[cardIndex] = { ...newCards[cardIndex], bullets: newBullets };
+      return { ...s, cards: newCards };
+    }));
+  }, []);
+
+  const addComparisonBullet = useCallback((sectionId, cardIndex) => {
+    setSections(prev => prev.map(s => {
+      if (s.id !== sectionId) return s;
+      const newCards = [...s.cards];
+      newCards[cardIndex] = { ...newCards[cardIndex], bullets: [...newCards[cardIndex].bullets, ''] };
+      return { ...s, cards: newCards };
+    }));
+  }, []);
+
+  const removeComparisonBullet = useCallback((sectionId, cardIndex, bulletIndex) => {
+    setSections(prev => prev.map(s => {
+      if (s.id !== sectionId) return s;
+      const newCards = [...s.cards];
+      newCards[cardIndex] = { ...newCards[cardIndex], bullets: newCards[cardIndex].bullets.filter((_, i) => i !== bulletIndex) };
+      return { ...s, cards: newCards };
+    }));
   }, []);
 
   const btn = (color, small) => ({
@@ -669,8 +762,11 @@ export default function AllegroDescriptionEditor() {
                       </div>
                       <div style={{ padding: '6px 12px', backgroundColor: '#fafafa', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <label style={{ fontSize: 12, color: '#6b7280' }}>Kolor tła:</label>
-                        <input type="color" value={s.backgroundColor} onChange={e => updateSection(s.id, 'backgroundColor', e.target.value)} style={{ width: 32, height: 24, borderRadius: 4, border: '1px solid #d1d5db', cursor: 'pointer', padding: 0 }} />
+                        <input type="color" value={s.backgroundColor === 'transparent' ? '#ffffff' : s.backgroundColor} onChange={e => updateSection(s.id, 'backgroundColor', e.target.value)} style={{ width: 32, height: 24, borderRadius: 4, border: '1px solid #d1d5db', cursor: 'pointer', padding: 0 }} />
                         <span style={{ fontSize: 11, color: '#9ca3af' }}>{s.backgroundColor}</span>
+                        <button onClick={() => updateSection(s.id, 'backgroundColor', 'transparent')} style={{ padding: '4px 10px', fontSize: 11, backgroundColor: s.backgroundColor === 'transparent' ? '#4b5563' : '#9ca3af', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 500 }}>
+                          Brak tła
+                        </button>
                       </div>
 
                       <div style={{ padding: 12, backgroundColor: s.backgroundColor }}>
@@ -911,6 +1007,117 @@ export default function AllegroDescriptionEditor() {
                               ))}
                             </div>
                             <button onClick={() => setSections(prev => prev.map(sec => sec.id === s.id ? { ...sec, comparisonTable: { ...sec.comparisonTable, attributes: [...sec.comparisonTable.attributes, { id: Date.now(), name: 'Atrybut', values: Array(sec.comparisonTable.products.length).fill(null).map(() => ({ text: '', textAlign: 'left', fontWeight: 'normal' })) }] }} : sec))} style={btn('#3b82f6', true)}>+ Dodaj atrybut</button>
+                          </div>
+                        )}
+
+                        {/* ── PORÓWNANIE WARIANTÓW (upsell/downsell) ─────────────────────── */}
+                        {s.type === 'comparison-cards' && s.cards && (
+                          <div>
+                            <div style={{ marginBottom: 12 }}>
+                              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Nagłówek sekcji:</label>
+                              <input
+                                type="text"
+                                value={s.heading || ''}
+                                onChange={e => updateSection(s.id, 'heading', e.target.value)}
+                                placeholder="np. Jaką wersję wybrać?"
+                                style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, boxSizing: 'border-box', fontWeight: 600 }}
+                              />
+                            </div>
+                            <div style={{ marginBottom: 16 }}>
+                              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Wstęp (opcjonalnie):</label>
+                              <textarea
+                                value={s.intro || ''}
+                                onChange={e => updateSection(s.id, 'intro', e.target.value)}
+                                style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, minHeight: 50, boxSizing: 'border-box' }}
+                              />
+                            </div>
+
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                              {s.cards.map((card, cardIndex) => (
+                                <div key={card.id} style={{ flex: 1, minWidth: 260, border: '1px solid #e5e7eb', borderRadius: 8, padding: 10, backgroundColor: 'white' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>Wariant {cardIndex + 1}</span>
+                                    <button onClick={() => removeComparisonCard(s.id, cardIndex)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 14 }}>🗑️</button>
+                                  </div>
+
+                                  <select
+                                    value={card.badge}
+                                    onChange={e => updateComparisonCard(s.id, cardIndex, 'badge', e.target.value)}
+                                    style={{ width: '100%', padding: 6, border: '1px solid #d1d5db', borderRadius: 6, marginBottom: 8, fontSize: 12 }}
+                                  >
+                                    <option value="none">Brak etykiety</option>
+                                    <option value="current">Aktualnie oglądasz</option>
+                                    <option value="recommended">Polecany wariant</option>
+                                  </select>
+
+                                  <input
+                                    type="text" value={card.title}
+                                    onChange={e => updateComparisonCard(s.id, cardIndex, 'title', e.target.value)}
+                                    placeholder="Tytuł (np. Siatka PP 4)"
+                                    style={{ width: '100%', padding: 6, border: '1px solid #d1d5db', borderRadius: 6, marginBottom: 8, fontSize: 12, boxSizing: 'border-box' }}
+                                  />
+                                  <input
+                                    type="text" value={card.subtitle}
+                                    onChange={e => updateComparisonCard(s.id, cardIndex, 'subtitle', e.target.value)}
+                                    placeholder="Podtytuł (np. Linka 4 mm)"
+                                    style={{ width: '100%', padding: 6, border: '1px solid #d1d5db', borderRadius: 6, marginBottom: 8, fontSize: 12, boxSizing: 'border-box' }}
+                                  />
+                                  <textarea
+                                    value={card.description}
+                                    onChange={e => updateComparisonCard(s.id, cardIndex, 'description', e.target.value)}
+                                    placeholder="Krótki opis"
+                                    style={{ width: '100%', padding: 6, border: '1px solid #d1d5db', borderRadius: 6, marginBottom: 8, fontSize: 12, minHeight: 50, resize: 'vertical', boxSizing: 'border-box' }}
+                                  />
+
+                                  {card.bullets.map((bullet, bulletIndex) => (
+                                    <div key={bulletIndex} style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+                                      <input
+                                        type="text" value={bullet}
+                                        onChange={e => updateComparisonBullet(s.id, cardIndex, bulletIndex, e.target.value)}
+                                        placeholder="Punkt listy"
+                                        style={{ flex: 1, padding: 6, border: '1px solid #d1d5db', borderRadius: 6, fontSize: 12 }}
+                                      />
+                                      <button onClick={() => removeComparisonBullet(s.id, cardIndex, bulletIndex)} style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer' }}>×</button>
+                                    </div>
+                                  ))}
+                                  <button
+                                    onClick={() => addComparisonBullet(s.id, cardIndex)}
+                                    style={{ fontSize: 11, padding: '4px 8px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', marginBottom: 8 }}
+                                  >
+                                    + Dodaj punkt
+                                  </button>
+
+                                  <input
+                                    type="text" value={card.linkUrl}
+                                    onChange={e => updateComparisonCard(s.id, cardIndex, 'linkUrl', e.target.value)}
+                                    placeholder="Link URL (opcjonalnie)"
+                                    style={{ width: '100%', padding: 6, border: '1px solid #d1d5db', borderRadius: 6, marginBottom: 8, fontSize: 12, boxSizing: 'border-box' }}
+                                  />
+                                  <input
+                                    type="text" value={card.linkText}
+                                    onChange={e => updateComparisonCard(s.id, cardIndex, 'linkText', e.target.value)}
+                                    placeholder="Tekst linku (np. Zobacz siatkę PP 4)"
+                                    style={{ width: '100%', padding: 6, border: '1px solid #d1d5db', borderRadius: 6, fontSize: 12, boxSizing: 'border-box' }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+
+                            <button
+                              onClick={() => addComparisonCard(s.id)}
+                              style={{ ...btn('#10b981', true), marginTop: 12 }}
+                            >
+                              + Dodaj wariant
+                            </button>
+
+                            <div style={{ marginTop: 16 }}>
+                              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 4 }}>Podsumowanie na dole (opcjonalnie):</label>
+                              <textarea
+                                value={s.summary || ''}
+                                onChange={e => updateSection(s.id, 'summary', e.target.value)}
+                                style={{ width: '100%', padding: '8px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, minHeight: 50, boxSizing: 'border-box' }}
+                              />
+                            </div>
                           </div>
                         )}
 
