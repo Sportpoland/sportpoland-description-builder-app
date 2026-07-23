@@ -133,14 +133,14 @@ const EXPORT_CSS = `
 .sp-youtube-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;border-radius:10px}
 
 /* ===== SIATKA IKON (styl kart USP) ===== */
-.sp-icons-grid{display:grid;grid-template-columns:1fr;gap:15px;width:100%}
-.sp-icon-item{background:var(--icon-card-bg, #fff);border-radius:15px;overflow:hidden;display:flex;flex-direction:column}
+.sp-icons-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:15px;width:100%}
+.sp-icon-item{background:var(--icon-card-bg, #fff);border-radius:15px;overflow:hidden;display:flex;flex-direction:column;flex:0 1 100%;max-width:100%}
 .sp-icon-media{width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;line-height:0;padding:10px 10px 0}
 .sp-icon-emoji{font-size:40px;display:block;text-align:center;padding:10px 10px 0}
 .sp-icon-image{width:auto;height:auto;max-width:100%;max-height:120px;display:block;object-fit:contain;object-position:center}
-.sp-icon-text{padding:10px 16px 16px}
-.sp-icon-text h4{margin:0 0 8px;font-size:15px;font-weight:bold}
-.sp-icon-desc{margin:0;line-height:1.5;font-size:14px}
+.sp-icon-text{padding:10px 16px 16px;text-align:center!important}
+.sp-icon-text h4{margin:0 0 8px;font-size:15px;font-weight:bold;text-align:center!important}
+.sp-icon-desc{margin:0;line-height:1.5;font-size:14px;text-align:center!important}
 
 /* ===== FEATURES ===== */
 .sp-features-grid{display:grid;grid-template-columns:1fr;gap:20px}
@@ -193,7 +193,7 @@ const EXPORT_CSS = `
   .sp-flex{flex-direction:column}
   .sp-flex .sp-image-container{order:1}
   .sp-flex>div:not(.sp-image-container){order:2}
-  .sp-icons-grid{grid-template-columns:1fr}
+  .sp-icons-grid{justify-content:center}
 }
 @media(min-width:768px){
   .sp-container{padding:20px}
@@ -209,7 +209,8 @@ const EXPORT_CSS = `
   .sp-usp-grid{grid-template-columns:1fr 1fr;gap:20px}
   .sp-usp-item{height:380px;display:grid;grid-template-rows:7fr 3fr}
   .sp-usp-text{padding:18px 20px;display:flex;flex-direction:column;justify-content:flex-start}
-  .sp-icons-grid{grid-template-columns:1fr 1fr;gap:20px}
+  .sp-icons-grid{gap:20px}
+  .sp-icon-item{flex:0 1 calc(50% - 10px);max-width:calc(50% - 10px)}
   .sp-cmp-grid{grid-template-columns:repeat(auto-fit, minmax(220px, 1fr))}
 }
 @media(min-width:1024px){
@@ -220,7 +221,8 @@ const EXPORT_CSS = `
   .sp-feature-item{padding:30px;gap:30px}
   .sp-feature-icon{font-size:70px;width:120px;height:120px}
   .sp-usp-item{height:440px}
-  .sp-icons-grid{grid-template-columns:repeat(4,1fr);gap:20px}
+  .sp-icons-grid{gap:20px}
+  .sp-icon-item{flex:0 1 calc(25% - 15px);max-width:calc(25% - 15px)}
 }
 </style>
 `;
