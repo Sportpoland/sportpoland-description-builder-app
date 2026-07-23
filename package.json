@@ -19,6 +19,9 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
+  "overrides": {
+   "eslint-plugin-jest": "27.9.0"
+  },
   "eslintConfig": {
     "extends": [
       "react-app",
